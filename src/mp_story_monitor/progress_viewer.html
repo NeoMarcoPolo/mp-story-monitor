@@ -1,225 +1,1631 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pipeline Progress</title>
+  <title>Pipeline Monitor</title>
   <style>
     :root {
-      /* 60/30/10: black (60%), white (30%), accent (10%) */
-      --black: #000000;
+      /* High Contrast Technical Theme */
+      --black: #050505;
+      --dark-gray: #111111;
+      --mid-gray: #333333;
+      --light-gray: #e5e5e5;
       --white: #ffffff;
-      --accent: #2563eb;
+
+      /* Vibrant Accent */
+      --accent: #00ecff;
+      /* Cyan/Electric Blue for high visibility against black */
+      --accent-dim: rgba(0, 236, 255, 0.1);
+
+      /* Semantic Colors */
       --bg: var(--black);
-      --card: var(--white);
-      --text: var(--white);
-      --text-on-card: var(--black);
-      --done: var(--accent);
+      --card-bg: var(--dark-gray);
+      --border: var(--mid-gray);
+      --text-primary: var(--white);
+      --text-secondary: #888888;
+
+      --success: #00ff9d;
       --running: var(--accent);
-      --pending: #737373;
-      --muted: #525252;
+      --pending: #444444;
+      --error: #ff0055;
+
+      /* Spacing */
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
     }
-    * { box-sizing: border-box; }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: "SF Mono", "Menlo", "Monaco", "Courier New", monospace;
+      /* Technical feel */
       background: var(--bg);
-      color: var(--text);
+      color: var(--text-primary);
       margin: 0;
-      padding: 1.5rem;
+      padding: var(--space-lg);
       min-height: 100vh;
-    }
-    h1 { font-size: 1.25rem; margin: 0 0 0.5rem; font-weight: 600; }
-    .meta { font-size: 0.8rem; color: var(--muted); margin-bottom: 1.5rem; }
-    .phases {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
-      max-width: 24rem;
+      gap: var(--space-lg);
+      font-size: 14px;
+      line-height: 1.5;
     }
-    .phase {
+
+    /* Layout Grid */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: var(--space-lg);
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: var(--space-md);
+      margin-bottom: var(--space-md);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      gap: var(--space-lg);
+    }
+
+    .header .title {
+      font-size: 2.25rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      text-transform: uppercase;
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    .header .header-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.25rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .header .header-meta .meta {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      text-transform: uppercase;
+    }
+
+    .meta-camp {
+      display: flex;
+      gap: var(--space-md);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .meta-item {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      padding: 0.6rem 0.9rem;
-      background: var(--card);
-      color: var(--text-on-card);
-      border-radius: 8px;
+      gap: 0.5em;
+    }
+
+    .meta-value {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Card Consistencies */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: var(--space-md);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-title {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      margin: 0 0 var(--space-md) 0;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: var(--space-sm);
+    }
+
+    /* Phases Stepper */
+    .phase-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .phase-item {
+      display: flex;
+      align-items: center;
+      padding: var(--space-sm) var(--space-md);
+      border: 1px solid var(--border);
+      position: relative;
+      background: transparent;
+      transition: background 0.2s;
+    }
+
+    .phase-item:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .phase-item.running {
+      border-color: var(--running);
+      background: var(--accent-dim);
+    }
+
+    .phase-item.done {
+      border-color: var(--success);
+    }
+
+    .phase-item.pending {
+      border-color: var(--pending);
+      color: var(--text-secondary);
+    }
+
+    .phase-icon {
+      margin-right: var(--space-md);
+      font-weight: bold;
+      width: 1.5em;
+      text-align: center;
+    }
+
+    .phase-name {
+      font-weight: 600;
+      flex: 1;
+    }
+
+    .phase-status {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      font-weight: bold;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      border: 1px solid currentColor;
+    }
+
+    .status-badge.running {
+      color: var(--running);
+      border-color: var(--running);
+      box-shadow: 0 0 5px var(--running);
+    }
+
+    .status-badge.done {
+      color: var(--success);
+      border-color: var(--success);
+    }
+
+    .status-badge.pending {
+      color: var(--text-secondary);
+      border-color: var(--border);
+    }
+
+    .status-badge.error {
+      color: var(--error);
+      border-color: var(--error);
+    }
+
+
+    /* Story Dashboard */
+    .story-title-large {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin: 0 0 var(--space-sm) 0;
+      line-height: 1.2;
+    }
+
+    .logline {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-lg);
+      font-style: italic;
+      border: 1px solid var(--accent);
+      padding: var(--space-md);
+    }
+
+    /* Asset Grid */
+    .asset-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      /* Gap for border effect */
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: var(--space-lg);
+    }
+
+    .asset-stat {
+      background: var(--card-bg);
+      padding: var(--space-md);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .asset-shape-wrap {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Shape: Image = rectangle (frame) */
+    .asset-shape-image {
+      width: 28px;
+      height: 20px;
+      border: 1px solid currentColor;
+      border-radius: 2px;
+      background: transparent;
+    }
+
+    /* Shape: Video = rectangle with play triangle */
+    .asset-shape-video {
+      width: 28px;
+      height: 20px;
+      border: 1px solid currentColor;
+      border-radius: 2px;
+      background: transparent;
+      position: relative;
+    }
+
+    .asset-shape-video::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-40%, -50%);
+      border-width: 6px 0 6px 10px;
+      border-style: solid;
+      border-color: transparent transparent transparent currentColor;
+    }
+
+    /* Shape: Audio = 3 bars (waveform) */
+    .asset-shape-audio {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 20px;
+    }
+
+    .asset-shape-audio span {
+      width: 4px;
+      background: currentColor;
+      border-radius: 1px;
+    }
+
+    .asset-shape-audio span:nth-child(1) {
+      height: 10px;
+    }
+
+    .asset-shape-audio span:nth-child(2) {
+      height: 18px;
+    }
+
+    .asset-shape-audio span:nth-child(3) {
+      height: 14px;
+    }
+
+    /* Shape: Text = 3 lines (document) */
+    .asset-shape-text {
+      width: 24px;
+      height: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      justify-content: center;
+    }
+
+    .asset-shape-text span {
+      height: 2px;
+      background: currentColor;
+      border-radius: 1px;
+    }
+
+    .asset-shape-text span:nth-child(1) {
+      width: 100%;
+    }
+
+    .asset-shape-text span:nth-child(2) {
+      width: 85%;
+    }
+
+    .asset-shape-text span:nth-child(3) {
+      width: 70%;
+    }
+
+    .asset-val {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: block;
+    }
+
+    .asset-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-top: 0;
+      display: block;
+    }
+
+    /* Chapters List */
+    .chapter-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .chapter-block {
+      border: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .chapter-header {
+      padding: var(--space-sm) var(--space-md);
+      background: rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chapter-title {
+      font-weight: 700;
       font-size: 0.95rem;
     }
-    .phase.done   { border: 3px solid var(--done); }
-    .phase.running { border: 3px solid var(--running); animation: pulse 1.5s ease-in-out infinite; }
-    .phase.pending { border: 3px solid var(--pending); opacity: 0.9; }
-    .icon { width: 1.25rem; height: 1.25rem; flex-shrink: 0; }
-    .phase.done .icon { color: var(--accent); }
-    .phase.running .icon { color: var(--accent); }
-    .phase.pending .icon { color: var(--pending); }
-    .spinner { animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.85; } }
-    .label { text-transform: capitalize; }
-    .updated { font-size: 0.75rem; color: var(--muted); margin-top: 1rem; }
-    .story-so-far {
-      margin-top: 1.25rem;
-      padding: 0.9rem;
-      background: var(--card);
-      color: var(--text-on-card);
-      border-radius: 8px;
-      border: 3px solid var(--accent);
-      max-width: 28rem;
+
+    .scene-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
     }
-    .story-so-far h2 { font-size: 0.85rem; margin: 0 0 0.5rem; color: var(--accent); font-weight: 600; }
-    .story-so-far .story-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.35rem; }
-    .story-so-far .logline { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.75rem; line-height: 1.35; }
-    .story-so-far .skeleton-assets { font-size: 0.8rem; margin: 0 0 0.35rem 0; }
-    .story-so-far .skeleton-assets-line { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin-bottom: 0.5rem; }
-    .story-so-far .skeleton-label { font-weight: 600; margin-right: 0.25rem; }
-    .story-so-far .qaqc-banner { font-size: 0.85rem; font-weight: 600; color: var(--accent); margin: 0 0 0.5rem 0; padding: 0.4rem 0; border: 2px solid var(--accent); border-radius: 6px; text-align: center; }
-    .story-so-far .chapters { font-size: 0.8rem; }
-    .story-so-far .chapters ul { margin: 0; padding-left: 1.2rem; }
-    .story-so-far .chapters li { margin: 0.2rem 0; }
-    .story-so-far .chapters .chapter-list { list-style: disc; }
-    .story-so-far .chapters .scene-list { list-style: circle; padding-left: 1rem; margin-top: 0.25rem; }
-    .story-so-far .chapters .scene-item { margin: 0.15rem 0; }
-    .story-so-far .chapters .scene-summary { color: var(--muted); font-size: 0.9em; }
-    .story-so-far .chapters .scene-count { color: var(--muted); }
-    .story-so-far .chapters .scene-assets { font-size: 0.85em; color: var(--muted); margin-left: 0.25rem; }
-    .story-so-far .chapters .scene-assets .spinner { display: inline-block; }
-    .story-so-far .parallel-note { font-size: 0.75rem; color: var(--muted); margin: 0 0 0.5rem 0; }
-    .story-so-far .building-note { font-size: 0.8rem; color: var(--accent); margin: 0 0 0.5rem 0; display: flex; align-items: center; gap: 0.4rem; }
-    .story-so-far .building-note .spinner { display: inline-block; }
-    .help {
+
+    .scene-table th,
+    .scene-table td {
+      padding: var(--space-sm) var(--space-md);
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scene-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .scene-table th {
+      color: var(--text-secondary);
+      font-weight: 400;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scene-assets-cell {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .mini-badge {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .mini-badge.has-assets {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Inline shapes for scene badges (small) */
+    .mini-badge .asset-shape-image {
+      width: 14px;
+      height: 10px;
+      border-width: 1px;
+    }
+
+    .mini-badge .asset-shape-video {
+      width: 14px;
+      height: 10px;
+      border-width: 1px;
+    }
+
+    .mini-badge .asset-shape-video::after {
+      border-width: 3px 0 3px 5px;
+    }
+
+    .mini-badge .asset-shape-audio {
+      height: 10px;
+    }
+
+    .mini-badge .asset-shape-audio span {
+      width: 2px;
+    }
+
+    .mini-badge .asset-shape-audio span:nth-child(1) {
+      height: 5px;
+    }
+
+    .mini-badge .asset-shape-audio span:nth-child(2) {
+      height: 9px;
+    }
+
+    .mini-badge .asset-shape-audio span:nth-child(3) {
+      height: 7px;
+    }
+
+    .mini-badge .asset-shape-text {
+      width: 12px;
+      height: 10px;
+      gap: 1px;
+    }
+
+    .mini-badge .asset-shape-text span {
+      height: 1px;
+    }
+
+    .mini-badge .asset-shape-text span:nth-child(2) {
+      width: 80%;
+    }
+
+    .mini-badge .asset-shape-text span:nth-child(3) {
+      width: 60%;
+    }
+
+    /* Utilities */
+    .spinner {
+      display: inline-block;
+      animation: spin 1s steps(8) infinite;
+    }
+
+    @keyframes spin {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .blink {
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .text-mono {
+      font-family: monospace;
+    }
+
+    .text-dim {
+      color: var(--text-secondary);
+    }
+
+    .text-accent {
+      color: var(--accent);
+    }
+
+    .updated-bar {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: var(--space-sm);
+      text-align: right;
+    }
+
+    .updated-bar.stale {
+      color: var(--error);
+      font-weight: 700;
+      animation: pulse-stale 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-stale {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.75;
+      }
+    }
+
+    .generating-status {
+      margin-top: var(--space-sm);
       font-size: 0.8rem;
-      color: var(--text-on-card);
-      margin-top: 1.5rem;
-      padding: 0.75rem;
-      background: var(--card);
-      border-radius: 6px;
+      min-height: 1.5em;
     }
-    .help code { background: #e5e5e5; color: var(--black); padding: 0.1em 0.3em; border-radius: 4px; }
+
+    .generating-status .generating-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--running);
+      font-weight: 600;
+      animation: generating-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes generating-pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.85;
+      }
+    }
+
+    .generating-status .generating-line .spinner {
+      display: inline-block;
+      font-size: 1.1em;
+    }
+
+    .generating-status .stale-warning {
+      display: block;
+      margin-top: 6px;
+      color: var(--error);
+      font-weight: 600;
+    }
+
+    /* Main card pulse when a phase is generating */
+    .card.phase-generating {
+      position: relative;
+      border-top: 2px solid var(--running);
+      animation: card-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes card-pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(0, 236, 255, 0);
+      }
+
+      50% {
+        box-shadow: 0 0 12px 0 rgba(0, 236, 255, 0.25);
+      }
+    }
+
+    @keyframes pulse-border {
+      0% {
+        border-color: var(--running);
+        background: var(--accent-dim);
+      }
+
+      50% {
+        border-color: transparent;
+        background: transparent;
+      }
+
+      100% {
+        border-color: var(--running);
+        background: var(--accent-dim);
+      }
+    }
+
+    .blink-border {
+      animation: pulse-border 2s infinite;
+    }
+
+    /* Story building in progress — inform user */
+    .story-building-info {
+      display: none;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-sm) var(--space-md);
+      margin-bottom: var(--space-md);
+      background: var(--accent-dim);
+      border: 1px solid var(--running);
+      color: var(--running);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .story-building-info.visible {
+      display: flex;
+    }
+    .story-building-info .spinner {
+      flex-shrink: 0;
+    }
+
+    .mute-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .mute-toggle:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .mute-toggle.muted {
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    /* --- CINEMA MODE / SCREENPLAY STYLING --- */
+    .screenplay-container {
+      font-family: "Courier Prime", "Courier New", Courier, monospace;
+      background: #1a1a1a;
+      padding: var(--space-lg);
+      border: 1px solid #333;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      color: #ddd;
+      max-width: 800px;
+      /* Standard script width approximation */
+      margin: 0 auto;
+    }
+
+    .sp-slugline {
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: var(--white);
+      border-bottom: 1px solid #333;
+      padding-bottom: 4px;
+    }
+
+    .sp-action {
+      margin-bottom: 1rem;
+      line-height: 1.4;
+    }
+
+    .sp-character {
+      text-align: center;
+      font-weight: bold;
+      margin-top: 1rem;
+      margin-bottom: 0px;
+      width: 60%;
+      margin-left: auto;
+      margin-right: auto;
+      text-transform: uppercase;
+    }
+
+    .sp-dialogue {
+      text-align: center;
+      width: 80%;
+      margin-left: auto;
+      margin-right: auto;
+      margin-bottom: 1rem;
+    }
+
+    .sp-transition {
+      text-align: right;
+      text-transform: uppercase;
+      margin-top: 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+
+    /* Shot List / Asset Details */
+    .shot-list {
+      margin-top: 1rem;
+      border-top: 1px dashed #333;
+      padding-top: 0.5rem;
+      font-family: "SF Mono", "Menlo", monospace;
+      font-size: 0.8rem;
+    }
+
+    .shot-item {
+      display: grid;
+      grid-template-columns: 24px 1fr auto;
+      grid-template-rows: auto auto auto;
+      gap: var(--space-sm);
+      padding: 4px 0;
+      align-items: start;
+      border-bottom: 1px solid #222;
+      color: #888;
+    }
+    .shot-item .shot-icon { grid-column: 1; grid-row: 1; }
+    .shot-item .shot-meta:first-of-type { grid-column: 2; grid-row: 1; min-width: 0; word-break: break-word; }
+    .shot-item .shot-meta:last-of-type { grid-column: 3; grid-row: 1; }
+    .shot-item .shot-reason { grid-column: 1 / -1; grid-row: 2; min-width: 0; margin-top: 2px; text-transform: none; }
+    .shot-item .shot-prompt { grid-column: 1 / -1; grid-row: 3; min-width: 0; margin-top: 2px; }
+
+    .shot-item:last-child {
+      border-bottom: none;
+    }
+
+    /* Table layout for assets (Name | Why | Metadata | Status) */
+    .assets-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+    .assets-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+    }
+    .assets-table td {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid #222;
+      vertical-align: top;
+      color: #ccc;
+    }
+    .assets-table tr:last-child td {
+      border-bottom: none;
+    }
+    .assets-table .col-name { width: 18%; min-width: 140px; color: var(--accent); font-weight: bold; word-break: break-word; }
+    .assets-table .col-why { width: 22%; min-width: 160px; font-style: italic; color: #8a9; word-break: break-word; }
+    .assets-table .col-meta { min-width: 0; word-break: break-word; }
+    .assets-table .col-status { width: 80px; text-align: right; color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; }
+
+    .shot-prompt {
+      color: #ddd;
+      white-space: pre-wrap;
+    }
+
+    .shot-meta {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      opacity: 0.7;
+    }
+
+    .toggle-shots-btn {
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      font-family: inherit;
+      font-size: 0.75rem;
+      cursor: pointer;
+      padding: 0;
+      margin-top: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .toggle-shots-btn:hover {
+      text-decoration: underline;
+    }
+
+    /* DEBUG mode banner at top of story area */
+    .debug-banner {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: var(--space-md);
+      margin-bottom: var(--space-lg);
+      font-size: 0.9rem;
+      border-radius: 4px;
+    }
+    .debug-banner strong { margin-right: 0.5rem; }
+
+    /* Screenplay chapter title: clear "Chapter NN: Title" format, larger font */
+    .screenplay-chapter-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin: 2rem 0 1rem 0;
+      text-align: left;
+      text-transform: none;
+      letter-spacing: 0.02em;
+      color: var(--text-primary);
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+
+    /* Chapter block in screenplay (wrapper for title + scenes) */
+    .screenplay-chapter {
+      margin-bottom: 2rem;
+    }
+
+    /* Animation when this chapter is being worked on */
+    .screenplay-chapter.chapter-working {
+      position: relative;
+      border: 1px solid var(--running);
+      padding: var(--space-md);
+      animation: chapter-working-pulse 2s ease-in-out infinite;
+    }
+
+    .screenplay-chapter.chapter-working .screenplay-chapter-title {
+      color: var(--running);
+    }
+
+    .screenplay-chapter.chapter-working .chapter-working-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--running);
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    @keyframes chapter-working-pulse {
+      0%, 100% { opacity: 1; box-shadow: none; }
+      50% { opacity: 0.92; box-shadow: 0 0 0 1px rgba(0, 236, 255, 0.2); }
+    }
+
+    /* Scene block wrapper */
+    .screenplay-scene {
+      margin-top: 1rem;
+      padding-left: 0;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    /* Animation when this scene is being worked on (has pending/running assets) */
+    .screenplay-scene.scene-working {
+      position: relative;
+      border: 1px solid var(--running);
+      padding: var(--space-md);
+      background: rgba(0, 236, 255, 0.04);
+      border-radius: 2px;
+      animation: scene-working-pulse 2s ease-in-out infinite;
+    }
+
+    .screenplay-scene.scene-working .sp-slugline {
+      color: var(--running);
+    }
+
+    .screenplay-scene .scene-working-badge {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--running);
+      margin-left: 0.5rem;
+    }
+
+    .screenplay-scene.scene-working .scene-working-badge {
+      display: inline-flex;
+    }
+
+    @keyframes scene-working-pulse {
+      0%, 100% { opacity: 1; background-color: rgba(0, 236, 255, 0.04); }
+      50% { opacity: 0.98; background-color: rgba(0, 236, 255, 0.08); }
+    }
   </style>
 </head>
+
 <body>
-  <h1>Pipeline Progress</h1>
-  <div class="meta" id="meta">–</div>
-  <div class="phases" id="phases"></div>
-  <div class="updated" id="updated"></div>
-  <div class="story-so-far" id="storySoFar" style="display:none;"></div>
-  <div class="help">
-    <strong>Is it stuck?</strong> "Last updated" refreshes every ~30s while the job is running. If it stays the same for 2+ minutes, the process may be stuck (check the terminal where the job runs).<br><br>
-    To view this page: run in the <strong>story folder</strong>:<br>
-    <code>python -m http.server 8765</code><br>
-    Or run your pipeline's progress server (e.g. <code>serve_progress.py</code> from mp-auto-generate).
+
+  <header>
+    <div class="header">
+      <div class="title">MP STORY MONITOR</div>
+      <div class="header-meta">
+        <button type="button" id="muteToggle" class="mute-toggle" title="Toggle notification sounds" aria-pressed="false">🔊 Sound on</button>
+        <div class="meta" id="jobId">Job: ...</div>
+        <div class="meta" id="workflowName">Workflow: ...</div>
+        <div class="meta" id="lastUpdated">Updated: ...</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="dashboard">
+    <!-- Sidebar: Phases -->
+    <aside>
+      <div class="card">
+        <div class="card-title">Pipeline Status</div>
+        <div id="phasesList" class="phase-list">
+          <!-- Populated by JS -->
+          <div class="phase-item pending">Loading...</div>
+        </div>
+        <div id="lastUpdated" class="updated-bar"></div>
+        <div id="generatingStatus" class="generating-status"></div>
+        <div id="storyBuildTime" class="updated-bar" style="display: none;"></div>
+      </div>
+
+      <div class="card" style="margin-top: var(--space-lg); border-color: var(--border);">
+        <div class="card-title">Output Folder</div>
+        <div
+          style="font-size: 0.8rem; word-break: break-all; color: var(--text-secondary); margin-bottom: var(--space-sm);">
+          <code id="outputPath" style="user-select: all; cursor: pointer;" title="Click to copy">--</code>
+        </div>
+        <button id="copyPathBtn"
+          style="background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 4px 8px; font-family: inherit; font-size: 0.75rem; cursor: pointer; text-transform: uppercase;">Copy
+          Path</button>
+      </div>
+
+      <div class="card" style="margin-top: var(--space-lg); border-color: var(--border);">
+        <div class="card-title">System Status</div>
+        <div style="font-size: 0.8rem; color: var(--text-secondary);">
+          Server: <span id="connectionStatus" style="color: var(--success);">--</span><br>
+          <br>
+          <div style="font-size: 0.7rem; opacity: 0.7;">
+            Refreshes every 2s<br>
+            Run: <code>python -m http.server</code> in story folder to view.
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content: Application State -->
+    <main id="mainContent">
+      <div class="card">
+        <div class="card-title">Story Intelligence</div>
+        <div id="storyBuildingInfo" class="story-building-info" role="status" aria-live="polite">
+          <span class="spinner">◐</span>
+          <span id="storyBuildingInfoText">Story building in progress — chapters, scenes and assets are being generated. Page auto-refreshes every 2s.</span>
+        </div>
+        <div id="storyBoard">
+          <div style="padding: var(--space-lg); text-align: center; color: var(--text-secondary);">
+            <span class="spinner">/</span> Waiting for data...
+          </div>
+        </div>
+      </div>
+    </main>
   </div>
+
   <script>
-    const phasesEl = document.getElementById("phases");
-    const metaEl = document.getElementById("meta");
-    const updatedEl = document.getElementById("updated");
-    const storySoFarEl = document.getElementById("storySoFar");
+    const els = {
+      phases: document.getElementById("phasesList"),
+      jobId: document.getElementById("jobId"),
+      workflowName: document.getElementById("workflowName"),
+      updated: document.getElementById("lastUpdated"),
+      generatingStatus: document.getElementById("generatingStatus"),
+      storyBuildTime: document.getElementById("storyBuildTime"),
+      storyBoard: document.getElementById("storyBoard"),
+      storyBuildingInfo: document.getElementById("storyBuildingInfo"),
+      conn: document.getElementById("connectionStatus"),
+      outPath: document.getElementById("outputPath"),
+      copyBtn: document.getElementById("copyPathBtn")
+    };
 
-    function label(name) {
-      return name.charAt(0).toUpperCase() + name.slice(1).replace(/_/g, " ");
-    }
-
-    function render(data) {
-      if (!data || typeof data.phases !== "object") return;
-      metaEl.textContent = [data.job_id, data.workflow].filter(Boolean).join(" · ") || "–";
-      const order = (data.phase_order && data.phase_order.length) ? data.phase_order : Object.keys(data.phases || {});
-      phasesEl.innerHTML = order.map(name => {
-        const status = (data.phases[name] || "pending");
-        const running = status === "running";
-        const done = status === "done";
-        const icon = done ? "✓" : running ? "◐" : "○";
-        return `<div class="phase ${status}"><span class="icon ${running ? "spinner" : ""}">${icon}</span><span class="label">${label(name)}</span></div>`;
-      }).join("");
-      if (data.updated_ts) {
-        const t = new Date(data.updated_ts).getTime();
-        const s = Math.round((Date.now() - t) / 1000);
-        updatedEl.textContent = s < 60 ? `Last updated ${s}s ago` : `Last updated ${Math.floor(s / 60)}m ago`;
-      } else {
-        updatedEl.textContent = "";
-      }
-      const directorDone = data.phases.director === "done";
-      const directorRunning = data.phases.director === "running";
-      const productionPending = data.phases.production === "pending";
-      const showSkeleton = directorRunning || directorDone;
-      if (showSkeleton) {
-        storySoFarEl.style.display = "block";
-        fetch("./_director_progress.json").then(r => r.ok ? r.json() : null).then(function(d) {
-          if (d && (d.title || (d.chapters && d.chapters.length))) {
-            const n = typeof d.max_chapter_workers === "number" ? d.max_chapter_workers : 0;
-            const parallelNote = (n > 1) ? "<p class=\"parallel-note\">Processing up to " + n + " chapters in parallel</p>" : "";
-            const qaqcBanner = directorDone && productionPending ? "<p class=\"qaqc-banner\">Skeleton complete. Inspect all items below before production runs.</p>" : "";
-            const hasIncomplete = directorRunning && d.chapters && d.chapters.some(function(c) {
-              const sc = c.scene_count != null ? c.scene_count : (c.scenes && c.scenes.length) || 0;
-              if (sc === 0) return true;
-              return (c.scenes || []).some(function(s) { return (s.assets_count || 0) === 0; });
-            });
-            const buildingNote = (directorRunning && hasIncomplete) ? "<p class=\"building-note\"><span class=\"spinner\">◐</span> Filling in scenes and assets…</p>" : "";
-            const byType = d.assets_by_type || {};
-            const assetTypes = [{ key: "image", label: "Images" }, { key: "audio", label: "Audio" }, { key: "video", label: "Video" }, { key: "text", label: "Text" }];
-            const assetsLines = assetTypes.map(function(t) {
-              const n = byType[t.key];
-              return n != null && n > 0 ? "<span class=\"skeleton-assets\"><span class=\"skeleton-label\">" + t.label + ":</span>" + n + "</span>" : "<span class=\"skeleton-assets\" style=\"color:var(--muted)\"><span class=\"skeleton-label\">" + t.label + ":</span>…</span>";
-            }).join("");
-            const assetsBlock = "<div class=\"skeleton-assets-line\">" + assetsLines + "</div>";
-            const title = escapeHtml(d.title || "…");
-            const logline = (d.logline && d.logline.trim()) ? `<div class="logline">${escapeHtml(d.logline)}</div>` : "<div class=\"logline\" style=\"color:var(--muted)\">…</div>";
-            const list = (d.chapters && d.chapters.length) ? "<ul class=\"chapter-list\">" + d.chapters.map(function(c) {
-              const sceneCount = c.scene_count != null ? c.scene_count : (c.scenes && c.scenes.length) || 0;
-              const chapterSpinner = sceneCount === 0 ? " <span class=\"spinner\" style=\"font-size:0.9em\">◐</span>" : "";
-              const scenes = c.scenes && c.scenes.length ? c.scenes.map(function(s) {
-                const name = escapeHtml(s.name || "scene");
-                const summary = (s.summary && s.summary.trim()) ? " <span class=\"scene-summary\">" + escapeHtml(s.summary) + "</span>" : "";
-                const ac = s.assets_count != null ? s.assets_count : 0;
-                const sByType = s.assets_by_type || {};
-                const assetsBadge = ac > 0 ? " <span class=\"scene-assets\">✓ " + ac + " assets</span>" : " <span class=\"scene-assets\"><span class=\"spinner\">◐</span></span>";
-                const typeBadges = ["image", "audio", "video", "text"].map(function(k) {
-                  const n = sByType[k];
-                  if (n == null || n === 0) return "";
-                  const short = k === "image" ? "img" : k === "audio" ? "aud" : k === "video" ? "vid" : "txt";
-                  return " <span class=\"scene-assets\">" + n + " " + short + "</span>";
-                }).join("");
-                return "<li class=\"scene-item\">" + name + summary + assetsBadge + typeBadges + "</li>";
-              }).join("") : "";
-              const scenesUl = scenes ? "<ul class=\"scene-list\">" + scenes + "</ul>" : "";
-              return "<li class=\"chapter-item\">" + escapeHtml(c.title || "Chapter") + chapterSpinner + " <span class=\"scene-count\">(" + sceneCount + " scenes)</span>" + scenesUl + "</li>";
-            }).join("") + "</ul>" : "<p style=\"color:var(--muted)\">Chapters: …</p>";
-            storySoFarEl.innerHTML = "<h2>Story taking shape</h2>" + qaqcBanner + parallelNote + buildingNote + "<div class=\"story-title\">" + title + "</div>" + logline + assetsBlock + "<div class=\"chapters\">" + list + "</div>";
-          } else {
-            const n0 = (d && typeof d.max_chapter_workers === "number") ? d.max_chapter_workers : 0;
-            const note0 = (n0 > 1) ? "<p class=\"parallel-note\">Processing up to " + n0 + " chapters in parallel</p>" : "";
-            storySoFarEl.innerHTML = "<h2>Story taking shape</h2>" + note0 + "<p class=\"building-note\"><span class=\"spinner\">◐</span> Building skeleton…</p><div class=\"story-title\" style=\"color:var(--muted)\">…</div><div class=\"logline\" style=\"color:var(--muted)\">…</div><div class=\"skeleton-assets-line\" style=\"color:var(--muted)\"><span class=\"skeleton-assets\"><span class=\"skeleton-label\">Images:</span>…</span><span class=\"skeleton-assets\"><span class=\"skeleton-label\">Audio:</span>…</span><span class=\"skeleton-assets\"><span class=\"skeleton-label\">Video:</span>…</span><span class=\"skeleton-assets\"><span class=\"skeleton-label\">Text:</span>…</span></div><p style=\"color:var(--muted)\">Chapters: …</p>";
-          }
-        }).catch(function() {
-          storySoFarEl.innerHTML = "<h2>Story taking shape</h2><p class=\"building-note\"><span class=\"spinner\">◐</span> Loading…</p><div class=\"story-title\" style=\"color:var(--muted)\">…</div><div class=\"logline\" style=\"color:var(--muted)\">…</div><div class=\"skeleton-assets-line\" style=\"color:var(--muted)\"><span class=\"skeleton-assets\"><span class=\"skeleton-label\">Images:</span>…</span><span class=\"skeleton-assets\"><span class=\"skeleton-label\">Audio:</span>…</span><span class=\"skeleton-assets\"><span class=\"skeleton-label\">Video:</span>…</span><span class=\"skeleton-assets\"><span class=\"skeleton-label\">Text:</span>…</span></div><p style=\"color:var(--muted)\">Building…</p>";
-        });
-      } else {
-        storySoFarEl.style.display = "none";
-      }
-    }
     function escapeHtml(s) {
       if (!s) return "";
-      const div = document.createElement("div");
-      div.textContent = s;
-      return div.innerHTML;
+      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    function showError(msg) {
-      if (metaEl) metaEl.textContent = "Error";
-      if (phasesEl) phasesEl.innerHTML = "<div class=\"phase pending\" style=\"border:3px solid var(--muted)\"><span class=\"label\">" + msg + "</span></div>";
-      if (updatedEl) updatedEl.textContent = "";
+    /** Format a param value for display. For dialogue_script, normalize literal \\n to line breaks so dialogue reads clearly. */
+    function formatParamValue(key, v) {
+      const val = (typeof v === "object") ? JSON.stringify(v) : String(v);
+      const isDialogue = key === "dialogue_script" || (typeof v === "string" && /\[S1\]|\[S2\]/.test(v));
+      const normalized = isDialogue ? val.replace(/\\n/g, "\n") : val;
+      const escaped = escapeHtml(normalized);
+      const withBreaks = isDialogue ? escaped.replace(/\n/g, "<br>") : escaped;
+      return { html: withBreaks, isBlock: isDialogue };
     }
 
-    function poll() {
-      fetch("./_progress.json")
-        .then(r => { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.json(); })
-        .then(render)
-        .catch(function(err) {
-          showError("Cannot load _progress.json. Start the server from the story folder (the folder that contains this file and _progress.json): python -m http.server 8765");
+    /** Returns HTML for the shape icon of an asset type (image, video, audio, text). */
+    function shapeHtml(type) {
+      const t = (type || "").toLowerCase();
+      if (t === "image") return '<div class="asset-shape-image"></div>';
+      if (t === "video") return '<div class="asset-shape-video"></div>';
+      if (t === "audio") return '<div class="asset-shape-audio"><span></span><span></span><span></span></div>';
+      if (t === "text") return '<div class="asset-shape-text"><span></span><span></span><span></span></div>';
+      return "";
+    }
+
+    function formatTimeAgo(ts) {
+      if (!ts) return "";
+      const t = new Date(ts).getTime();
+      const s = Math.round((Date.now() - t) / 1000);
+      return s < 60 ? `${s}s ago` : `${Math.floor(s / 60)}m ago`;
+    }
+
+    // Copy path logic
+    if (els.copyBtn) {
+      els.copyBtn.addEventListener("click", () => {
+        const text = els.outPath.textContent;
+        if (text && text !== "--") {
+          navigator.clipboard.writeText(text).then(() => {
+            const originalText = els.copyBtn.textContent;
+            els.copyBtn.textContent = "COPIED!";
+            setTimeout(() => els.copyBtn.textContent = originalText, 2000);
+          });
+        }
+      });
+    }
+
+    function renderPhases(data) {
+      if (!data || !data.phases) return;
+
+      els.jobId.textContent = data.job_id || "--";
+      els.workflowName.textContent = data.workflow || "--";
+
+      // Show "Generating…" when any phase is running; "Stale?" if no update for STALE_THRESHOLD_SEC (e.g. 5 min)
+      const anyRunning = data.phases && Object.values(data.phases).some(v => v === "running");
+      const updatedTs = data.updated_ts ? new Date(data.updated_ts).getTime() : 0;
+      const secondsAgo = updatedTs ? Math.round((Date.now() - updatedTs) / 1000) : 0;
+      const stale = anyRunning && secondsAgo >= STALE_THRESHOLD_SEC;
+      const timeStr = formatTimeAgo(data.updated_ts);
+      if (els.updated) {
+        els.updated.textContent = stale ? "⚠ Stuck? Last update: " + timeStr : "Last update: " + timeStr;
+        els.updated.classList.toggle("stale", stale);
+      }
+      if (els.generatingStatus) {
+        if (anyRunning) {
+          els.generatingStatus.innerHTML = '<span class="generating-line"><span class="spinner">◐</span> Generating…</span>' +
+            (stale ? '<span class="stale-warning">No update for ' + (secondsAgo >= 60 ? Math.floor(secondsAgo / 60) + 'm' : secondsAgo + 's') + ' — check terminal.</span>' : '');
+        } else {
+          els.generatingStatus.innerHTML = '';
+        }
+      }
+
+      // Show "Story building in progress" when director is running so user knows content is being generated
+      const directorRunning = data.phases && data.phases.director === "running";
+      if (els.storyBuildingInfo) {
+        els.storyBuildingInfo.classList.toggle("visible", !!directorRunning);
+      }
+
+      if (data.story_path && els.outPath) {
+        els.outPath.textContent = data.story_path;
+        els.outPath.title = "Click to copy: " + data.story_path;
+      }
+
+      const order = (data.phase_order && data.phase_order.length) ? data.phase_order : Object.keys(data.phases);
+
+      const html = order.map(key => {
+        const status = data.phases[key] || "pending";
+        const label = key.toUpperCase().replace(/_/g, " ");
+
+        let icon = "○";
+        let iconClass = "phase-icon";
+
+        if (status === "done") {
+          icon = "●";
+        } else if (status === "running") {
+          icon = "◐";
+          iconClass += " spinner"; // Spin the icon
+        }
+
+        const badgeClass = `status-badge ${status}`;
+
+        // Add a pulsing effect to the running item
+        const itemClass = `phase-item ${status} ${status === 'running' ? 'blink-border' : ''}`;
+
+        return `
+                <div class="${itemClass}">
+                    <div class="${iconClass}">${icon}</div>
+                    <div class="phase-name">${label}</div>
+                    <div class="${badgeClass}">${status}</div>
+                </div>
+            `;
+      }).join("");
+
+      els.phases.innerHTML = html;
+    }
+
+    /** Build metadata cell HTML from asset params. */
+    function buildMetadataCell(params) {
+      if (!params || !Object.keys(params).length) return "<span style=\"color:#555;\">(No parameters)</span>";
+      const entries = Object.entries(params)
+        .filter(([_, v]) => v !== null && v !== "" && v !== undefined);
+      return entries.map(([k, v]) => {
+        const { html: valFormatted, isBlock } = formatParamValue(k, v);
+        const rowStyle = isBlock ? "display:block; margin-top:6px;" : "display:flex; gap:10px; margin-top:2px;";
+        const valueStyle = isBlock ? "color:#ccc; margin-top:4px; line-height:1.4; display:block;" : "color:#ccc;";
+        return `<div style="${rowStyle}"><span style="color:#666; min-width:80px;">${escapeHtml(k)}:</span><span style="${valueStyle}">${valFormatted}</span></div>`;
+      }).join("");
+    }
+
+    /** Render a list of assets (story/chapter/scene) as a table: Name | Why | Metadata | Status. */
+    function renderAssetsList(assets, listId) {
+      if (!assets || !assets.length) return { html: "", badge: "" };
+      let html = `<div class="shot-list" style="display:none;" id="${listId}">`;
+      html += `<table class="assets-table"><thead><tr><th class="col-name">Name</th><th class="col-why">Why</th><th class="col-meta">Metadata</th><th class="col-status">Status</th></tr></thead><tbody>`;
+      html += assets.map(a => {
+        const name = a.asset_name || a.assetName || "(unnamed)";
+        const type = a.type || "unknown";
+        const workflow = a.workflow || "";
+        const status = a.status || "pending";
+        const params = a.params || {};
+        const skillReason = (a.skill_reason || "").replace(/\s+/g, " ").trim();
+        const metaCell = buildMetadataCell(params);
+        const nameCell = `<div class="shot-icon" title="${type}" style="display:inline-block; vertical-align:middle; margin-right:6px;">${shapeHtml(type)}</div><span>${escapeHtml(name)} · ${escapeHtml(workflow)}</span>`;
+        const whyCell = skillReason ? escapeHtml(skillReason) : "—";
+        return `<tr><td class="col-name">${nameCell}</td><td class="col-why">${whyCell}</td><td class="col-meta"><div class="shot-prompt">${metaCell}</div></td><td class="col-status">${escapeHtml(status)}</td></tr>`;
+      }).join("");
+      html += "</tbody></table></div>";
+      const assetTypeLabel = listId === "story-assets" ? "STORY" : listId.startsWith("chapter-assets") ? "CHAPTER" : "ASSETS";
+      const badge = `<button class="toggle-shots-btn" data-panel-id="${listId}" data-asset-count="${assets.length}" data-asset-type="${assetTypeLabel}" onclick="togglePanel('${listId}')">[ + ] SHOW ${assets.length} ${assetTypeLabel} ASSETS</button>`;
+      return { html, badge };
+    }
+
+    /** Find first chapter index that has any pending/running asset (for "working" animation). */
+    function getWorkingChapterIndex(chapters) {
+      if (!chapters || !chapters.length) return -1;
+      for (let ci = 0; ci < chapters.length; ci++) {
+        const scenes = chapters[ci].scenes || [];
+        for (const s of scenes) {
+          const assets = s.assets || [];
+          if (assets.some(a => (a.status || "").toLowerCase() === "pending" || (a.status || "").toLowerCase() === "running"))
+            return ci;
+        }
+      }
+      return -1;
+    }
+
+    const EXPANDED_STORAGE_KEY = "progress_viewer_expanded";
+    function getStoredExpandedIds() {
+      try {
+        const raw = sessionStorage.getItem(EXPANDED_STORAGE_KEY);
+        if (!raw) return new Set();
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) ? new Set(arr) : new Set();
+      } catch (_) { return new Set(); }
+    }
+    function saveExpandedIds(ids) {
+      try { sessionStorage.setItem(EXPANDED_STORAGE_KEY, JSON.stringify([...ids])); } catch (_) {}
+    }
+    /** Capture which asset panels are expanded (all .shot-list with id) for restore after re-render or page refresh. */
+    function captureExpandedShots() {
+      const expanded = new Set();
+      if (els.storyBoard) {
+        els.storyBoard.querySelectorAll(".shot-list[id]").forEach(el => {
+          if (el.id && window.getComputedStyle(el).display !== "none") expanded.add(el.id);
         });
+      }
+      return expanded;
     }
+    function restoreExpandedShots(expanded) {
+      const merged = new Set(expanded);
+      getStoredExpandedIds().forEach(id => merged.add(id));
+      merged.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = "block";
+      });
+      merged.forEach(id => updateToggleButtonLabel(id));
+    }
+    /** Update toggle button label to match panel visibility (SHOW vs HIDE). */
+    function updateToggleButtonLabel(panelId) {
+      const el = document.getElementById(panelId);
+      const btn = document.querySelector(`.toggle-shots-btn[data-panel-id="${panelId}"]`);
+      if (!btn || !el) return;
+      const isExpanded = el.style.display !== "none";
+      const count = btn.getAttribute("data-asset-count") || "0";
+      const type = btn.getAttribute("data-asset-type") || "ASSETS";
+      btn.textContent = isExpanded ? `[ − ] HIDE ${count} ${type} ASSETS` : `[ + ] SHOW ${count} ${type} ASSETS`;
+    }
+    /** Toggle a panel and persist expanded state so refresh doesn't collapse sections. */
+    function togglePanel(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.display = el.style.display === "none" ? "block" : "none";
+      updateToggleButtonLabel(id);
+      const expanded = captureExpandedShots();
+      saveExpandedIds(expanded);
+    }
+
+    function renderStory(d, progressData) {
+      if (!d || (!d.title && !d.chapters)) {
+        const directorRunning = progressData && progressData.phases && progressData.phases.director === "running";
+        const msg = directorRunning
+          ? 'Director working… Title and chapters will appear here as they’re generated.'
+          : 'No story data available yet...';
+        const debugBanner = (d && d.debug_mode)
+          ? `<div class="debug-banner"><strong>DEBUG is on.</strong> ${escapeHtml(d.debug_mode_note || "To turn off: set debug_mode to false in config.json, or set env MP_AUTO_GENERATE_DEBUG=0")}</div>`
+          : "";
+        els.storyBoard.innerHTML = debugBanner + `<div style="padding:2rem;color:var(--text-secondary);">${msg}</div>`;
+        return;
+      }
+
+      const expandedShots = captureExpandedShots();
+      saveExpandedIds(expandedShots);
+
+      const title = escapeHtml(d.title || "Untitled Story");
+      const logline = escapeHtml(d.logline || "No logline generated yet.");
+      const directorRunning = progressData && progressData.phases && progressData.phases.director === "running";
+      const workingChapterIndex = getWorkingChapterIndex(d.chapters);
+
+      // Assets Summary
+      const assets = d.assets_by_type || {};
+      const assetHtml = ["image", "audio", "video", "text"].map(type => `
+            <div class="asset-stat">
+                <div class="asset-shape-wrap">${shapeHtml(type)}</div>
+                <span class="asset-val">${assets[type] || 0}</span>
+                <span class="asset-label">${type}s</span>
+            </div>
+        `).join("");
+
+      // Story-level assets section
+      const storyAssets = d.story_assets || [];
+      const storyAssetsRendered = renderAssetsList(storyAssets, "story-assets");
+      const storyAssetsSection = storyAssets.length > 0
+        ? `<div class="card-title" style="margin-top:1rem;">Story assets</div><div style="margin-bottom:1rem;">${storyAssetsRendered.badge}${storyAssetsRendered.html}</div>`
+        : "";
+
+      // Chapters rendered as Screenplay (with chapter assets before scenes)
+      // Strip leading "Chapter N" from API title so we don't show "Chapter 03: Chapter 2 - The Invitation"
+      const stripChapterPrefix = (t) => (t || "").replace(/^Chapter\s*\d+\s*[-:]\s*/i, "").trim() || t;
+      const chaptersHtml = (d.chapters || []).map((c, i) => {
+        const chapterNum = String(i + 1).padStart(2, "0");
+        const rawTitle = c.title || `Chapter ${i + 1}`;
+        const cTitle = escapeHtml(stripChapterPrefix(rawTitle) || rawTitle);
+        const isWorking = directorRunning && workingChapterIndex === i;
+        const scenes = c.scenes || [];
+        const chapterAssets = c.assets || [];
+        const chapterAssetsRendered = renderAssetsList(chapterAssets, "chapter-assets-" + i);
+        const chapterAssetsSection = chapterAssets.length > 0
+          ? `<div class="card-title" style="margin:1rem 0 0.5rem 0; font-size:0.9rem;">Chapter assets</div><div style="margin-bottom:1rem;">${chapterAssetsRendered.badge}${chapterAssetsRendered.html}</div>`
+          : "";
+
+        const scenesHtml = scenes.map((s, si) => {
+          const sName = escapeHtml(s.name || `Scene ${si + 1}`);
+          const sSummary = escapeHtml(s.summary || "");
+          const sAssets = s.assets_by_type || {};
+
+          // Format summary as Action or simple text if it lacks structure
+          // Try to parse rudimentary character/dialogue if present (simple heuristic)
+          // For now, treat summary as Action Block
+
+          const assetsList = s.assets || [];
+          const hasPendingOrRunning = assetsList.some(a => {
+            const st = (a.status || "").toLowerCase();
+            return st === "pending" || st === "running";
+          });
+          const sceneWorking = directorRunning && hasPendingOrRunning;
+          let shotsHtml = "";
+
+          if (assetsList.length > 0) {
+            shotsHtml = `<div class="shot-list" style="display:none;" id="shots-${i}-${si}">`;
+            shotsHtml += `<table class="assets-table"><thead><tr><th class="col-name">Name</th><th class="col-why">Why</th><th class="col-meta">Metadata</th><th class="col-status">Status</th></tr></thead><tbody>`;
+            shotsHtml += assetsList.map(a => {
+              const name = a.asset_name || a.assetName || "(unnamed)";
+              const type = a.type || "unknown";
+              const workflow = a.workflow || "";
+              const status = a.status || "pending";
+              const params = a.params || {};
+              const skillReason = (a.skill_reason || "").replace(/\s+/g, " ").trim();
+              const metaCell = buildMetadataCell(params);
+              const nameCell = `<div class="shot-icon" title="${type}" style="display:inline-block; vertical-align:middle; margin-right:6px;">${shapeHtml(type)}</div><span>${escapeHtml(name)} · ${escapeHtml(workflow)}</span>`;
+              const whyCell = skillReason ? escapeHtml(skillReason) : "—";
+              return `<tr><td class="col-name">${nameCell}</td><td class="col-why">${whyCell}</td><td class="col-meta"><div class="shot-prompt">${metaCell}</div></td><td class="col-status">${escapeHtml(status)}</td></tr>`;
+            }).join("");
+            shotsHtml += "</tbody></table></div>";
+          }
+
+          const assetCountBadge = assetsList.length > 0
+            ? `<button class="toggle-shots-btn" data-panel-id="shots-${i}-${si}" data-asset-count="${assetsList.length}" data-asset-type="SCENE" onclick="togglePanel('shots-${i}-${si}')">[ + ] SHOW ${assetsList.length} SCENE ASSETS</button>`
+            : "";
+
+          return `
+             <div class="screenplay-scene ${sceneWorking ? "scene-working" : ""}">
+               <div class="sp-slugline">${sName.toUpperCase()}${sceneWorking ? '<span class="scene-working-badge"><span class="spinner">◐</span> Generating…</span>' : ""}</div>
+               <div class="sp-action">${sSummary}</div>
+               <div style="display:flex; flex-direction:column; align-items:flex-end; margin-bottom:1rem;">
+                  <div style="display:flex; gap:8px; opacity:0.7;">
+                      ${Object.entries(sAssets).map(([k, v]) => v > 0 ? `<span class="mini-badge has-assets" style="border-style:dashed;">${k}:${v}</span>` : '').join('')}
+                  </div>
+                  ${assetCountBadge}
+                  ${shotsHtml}
+               </div>
+             </div>
+           `;
+        }).join("");
+
+        return `
+            <div class="screenplay-chapter ${isWorking ? "chapter-working" : ""}">
+                <div class="screenplay-chapter-title">
+                    Chapter ${chapterNum}: ${cTitle}
+                    ${isWorking ? '<span class="chapter-working-badge"><span class="spinner">◐</span> Generating…</span>' : ""}
+                </div>
+                ${chapterAssetsSection}
+                ${scenesHtml}
+            </div>
+        `;
+      }).join("");
+
+      const debugBannerHtml = (d.debug_mode)
+        ? `<div class="debug-banner"><strong>DEBUG is on.</strong> ${escapeHtml(d.debug_mode_note || "To turn off: set debug_mode to false in config.json, or set env MP_AUTO_GENERATE_DEBUG=0")}</div>`
+        : "";
+
+      els.storyBoard.innerHTML = `
+            ${debugBannerHtml}
+            <div class="story-title-large" style="text-align:center; margin-bottom:0.5rem;">${title}</div>
+            <div class="logline" style="text-align:center; border:none; font-style:normal; font-family:'Courier New'; margin-bottom: 2rem;">
+                "${logline}"
+            </div>
+            ${storyAssetsSection}
+            <div class="asset-grid">
+                ${assetHtml}
+            </div>
+
+            <div class="card-title" style="margin-top: 2rem;">Screenplay</div>
+            <div class="screenplay-container">
+                ${chaptersHtml || '<div style="text-align:center; padding:2rem; color:#666;">(SCENES NOT YET WRITTEN)</div>'}
+            </div>
+        `;
+      restoreExpandedShots(expandedShots);
+    }
+
+    const fetchOpts = { cache: "no-store" };
+    // Base URL for progress API: when page is not served from progress server (e.g. embedded in IDE), relative fetches fail; use explicit origin.
+    const PROGRESS_PORT = "8081";
+    const STALE_THRESHOLD_SEC = 120; // 2 minutes — no update for this long is usually a sign to investigate; shows warning and error sound
+
+    /**
+     * Sound rules (page polls every 2s):
+     * 1. Story-finish sound: once when director phase goes running → done.
+     * 2. Progress sound: when phases change OR when director content changes. Not on heartbeat.
+     * 3. Error sound: once when connection lost, first time stale, or phase error/failed.
+     */
+    const MUTE_STORAGE_KEY = "progress_viewer_mute";
+    function isMuted() {
+      try { return localStorage.getItem(MUTE_STORAGE_KEY) === "1"; } catch (_) { return false; }
+    }
+    function setMuted(muted) {
+      try { localStorage.setItem(MUTE_STORAGE_KEY, muted ? "1" : "0"); } catch (_) {}
+    }
+
+    /** Play story-progress sound when new chapters/scenes/assets or phase progress is detected. */
+    function playProgressSound() {
+      if (isMuted()) return;
+      try {
+        const audio = new Audio("notification-story-progress.mp3");
+        audio.volume = 0.6;
+        audio.play().catch(function() {});
+      } catch (_) {}
+    }
+
+    /** Play story-finish sound when story build (director phase) completes. */
+    function playStoryFinishSound() {
+      if (isMuted()) return;
+      try {
+        const audio = new Audio("notification-story-finish.mp3");
+        audio.volume = 0.6;
+        audio.play().catch(function() {});
+      } catch (_) {}
+    }
+
+    /** Play error sound when connection is broken, no update for long time, or a phase has failed. */
+    function playErrorSound() {
+      if (isMuted()) return;
+      try {
+        const audio = new Audio("notification-error.mp3");
+        audio.volume = 0.6;
+        audio.play().catch(function() {});
+      } catch (_) {}
+    }
+
+    function updateMuteButton() {
+      const btn = document.getElementById("muteToggle");
+      if (!btn) return;
+      const muted = isMuted();
+      btn.textContent = muted ? "🔇 Muted" : "🔊 Sound on";
+      btn.setAttribute("aria-pressed", muted ? "true" : "false");
+      btn.classList.toggle("muted", muted);
+    }
+    (function initMuteToggle() {
+      updateMuteButton();
+      const btn = document.getElementById("muteToggle");
+      if (btn) {
+        btn.addEventListener("click", function() {
+          setMuted(!isMuted());
+          updateMuteButton();
+        });
+      }
+    })();
+
+    /** Fingerprint of progress state (full: phases + updated_ts). */
+    let lastProgressFingerprint = null;
+    /** Phase-only fingerprint so we don't play progress sound on heartbeat (updated_ts every 30s). */
+    let lastPhaseFingerprint = null;
+    /** Fingerprint of director/story content: new chapters, scenes, scene details, or assets trigger sound. */
+    let lastDirectorFingerprint = null;
+    /** Previous director phase status to detect transition to "done" (story build finished). */
+    let lastDirectorPhaseStatus = null;
+    /** When we first saw director "running" (ms), for story-build duration. */
+    let lastDirectorStartedAt = null;
+    /** Computed story build duration in ms (director running → done); shown until page reload. */
+    let storyBuildDurationMs = null;
+    /** Previous connection status for error sound when connection is lost. */
+    let lastConnectionStatus = null;
+    /** Previous stale state so we play error sound only when first becoming stale. */
+    let lastStale = false;
+    /** Whether any phase was in error/failed last poll (for generation-failed sound). */
+    let lastPhaseHadError = false;
+
+    /** Build a fingerprint of director content so we can play sound when new chapters, scenes, details, or assets appear. */
+    function directorContentFingerprint(d) {
+      if (!d || (!d.title && !(d.chapters && d.chapters.length))) return null;
+      const chapters = (d.chapters || []).map(function(c) {
+        const scenes = (c.scenes || []).map(function(s) {
+          const assets = (s.assets || []).map(function(a) {
+            return (a.asset_name || a.assetName || "").trim() + "|" + (a.status || "");
+          }).sort();
+          return { name: s.name || "", summaryLen: (s.summary || "").length, assets: assets };
+        });
+        const cAssets = (c.assets || []).map(function(a) {
+          return (a.asset_name || a.assetName || "").trim() + "|" + (a.status || "");
+        }).sort();
+        return { title: c.title || "", scenes: scenes, assets: cAssets };
+      });
+      const storyAssets = (d.story_assets || []).map(function(a) {
+        return (a.asset_name || a.assetName || "").trim() + "|" + (a.status || "");
+      }).sort();
+      return JSON.stringify({
+        title: d.title || "",
+        loglineLen: (d.logline || "").length,
+        storyAssets: storyAssets,
+        chapters: chapters
+      });
+    }
+
+    /** Format milliseconds as "Xm Ys", "Xs", or "Xh Ym Zs". */
+    function formatDuration(ms) {
+      if (ms == null || ms < 0) return "";
+      const s = Math.floor(ms / 1000);
+      if (s < 60) return s + "s";
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      if (m < 60) return sec > 0 ? m + "m " + sec + "s" : m + "m";
+      const h = Math.floor(m / 60);
+      const min = m % 60;
+      return (min > 0 || sec > 0) ? h + "h " + min + "m " + sec + "s" : h + "h";
+    }
+
+    const progressBase = (function() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("progressBase")) return params.get("progressBase").replace(/\/$/, "");
+      if (window.location.port === PROGRESS_PORT && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) return "";
+      return "http://127.0.0.1:" + PROGRESS_PORT;
+    })();
+    // #region agent log
+    const DEBUG_INGEST = "http://127.0.0.1:7247/ingest/ca26efc6-4865-45e1-a109-8ee75418b9c5";
+    function agentLog(location, message, data, hypothesisId) {
+      fetch(DEBUG_INGEST, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location, message, data: data || {}, hypothesisId, timestamp: Date.now() }) }).catch(function() {});
+    }
+    // #endregion
+
+    function cacheBuster() { return "_=" + Date.now(); }
+    async function poll() {
+      try {
+        const progressUrl = progressBase + "/_progress.json?" + cacheBuster();
+        const r1 = await fetch(progressUrl, fetchOpts);
+        if (r1.ok) {
+          const data = await r1.json();
+          const directorStatus = data.phases && data.phases.director;
+          if (directorStatus === "running" && lastDirectorStartedAt === null) {
+            lastDirectorStartedAt = Date.now();
+          }
+          const storyJustFinished = lastDirectorPhaseStatus === "running" && directorStatus === "done";
+          if (storyJustFinished) {
+            playStoryFinishSound();
+            if (lastDirectorStartedAt !== null) {
+              storyBuildDurationMs = Date.now() - lastDirectorStartedAt;
+              lastDirectorStartedAt = null;
+            }
+          }
+          lastDirectorPhaseStatus = directorStatus || null;
+          const phaseFingerprint = JSON.stringify(data.phases);
+          const fullFingerprint = JSON.stringify({ phases: data.phases, updated_ts: data.updated_ts });
+          if (!storyJustFinished && lastProgressFingerprint !== null && phaseFingerprint !== lastPhaseFingerprint) {
+            playProgressSound();
+          }
+          lastProgressFingerprint = fullFingerprint;
+          lastPhaseFingerprint = phaseFingerprint;
+          // Error cues: no update for long time (stale), or any phase failed/error
+          const anyRunning = data.phases && Object.values(data.phases).some(function(v) { return v === "running"; });
+          const updatedTs = data.updated_ts ? new Date(data.updated_ts).getTime() : 0;
+          const secondsAgo = updatedTs ? Math.round((Date.now() - updatedTs) / 1000) : 0;
+          const stale = anyRunning && secondsAgo >= STALE_THRESHOLD_SEC;
+          const anyPhaseError = data.phases && Object.values(data.phases).some(function(s) {
+            const t = (s || "").toLowerCase();
+            return t === "error" || t === "failed";
+          });
+          if (lastStale === false && stale === true) playErrorSound();
+          if (lastPhaseHadError === false && anyPhaseError === true) playErrorSound();
+          lastStale = stale;
+          lastPhaseHadError = !!anyPhaseError;
+          lastConnectionStatus = "CONNECTED";
+          // #region agent log
+          agentLog("progress_viewer.html:poll", "progress_ok", { phases: data.phases, directorVal: data.phases && data.phases.director, hasDirectorKey: !!(data.phases && "director" in data.phases) }, "H1");
+          // #endregion
+          renderPhases(data);
+          if (els.conn) { els.conn.textContent = "CONNECTED"; els.conn.style.color = "var(--success)"; }
+          if (storyBuildDurationMs !== null) {
+            const el = document.getElementById("storyBuildTime");
+            if (el) {
+              el.textContent = "Story build time: " + formatDuration(storyBuildDurationMs);
+              el.style.display = "block";
+            }
+          }
+
+          // Show "generating" animation on main card when any phase is running
+          const mainCard = document.querySelector("#mainContent .card");
+          if (mainCard) {
+            const anyRunning = data.phases && Object.values(data.phases).some(v => v === "running");
+            mainCard.classList.toggle("phase-generating", !!anyRunning);
+          }
+
+          // Fetch details if available
+          if (data.phases && (data.phases.director === "running" || data.phases.director === "done")) {
+            let directorRendered = false;
+            try {
+              const directorUrl = progressBase + "/_director_progress.json?" + cacheBuster();
+              const r2 = await fetch(directorUrl, fetchOpts);
+              // #region agent log
+              agentLog("progress_viewer.html:poll", "director_fetch", { status: r2.status, ok: r2.ok }, "H2,H5");
+              // #endregion
+              if (r2.ok) {
+                const dData = await r2.json();
+                const directorFp = directorContentFingerprint(dData);
+                if (directorFp !== null && lastDirectorFingerprint !== null && directorFp !== lastDirectorFingerprint) {
+                  playProgressSound();
+                }
+                if (directorFp !== null) lastDirectorFingerprint = directorFp;
+                renderStory(dData, data);
+                directorRendered = true;
+              }
+            } catch (e) { console.log("No director data yet", e); }
+            if (!directorRendered) {
+              els.storyBoard.innerHTML = '<div style="padding:2rem;color:var(--text-secondary);">Director running… Story skeleton will appear here when ready. (If this persists, refresh the page.)</div>';
+            }
+          } else {
+            // #region agent log
+            agentLog("progress_viewer.html:poll", "director_branch_skipped", { directorBranch: false, phases: data.phases }, "H1");
+            // #endregion
+          }
+        } else {
+          if (lastConnectionStatus === "CONNECTED") playErrorSound();
+          lastConnectionStatus = "OFFLINE";
+          if (els.conn) { els.conn.textContent = "OFFLINE"; els.conn.style.color = "var(--error)"; }
+        }
+      } catch (e) {
+        if (lastConnectionStatus === "CONNECTED") playErrorSound();
+        lastConnectionStatus = "ERROR";
+        if (els.conn) { els.conn.textContent = "ERROR"; els.conn.style.color = "var(--error)"; }
+      }
+    }
+
     poll();
     setInterval(poll, 2000);
+
   </script>
 </body>
+
 </html>

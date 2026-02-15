@@ -9,12 +9,25 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Sequence
 
+# #region agent log
+DEBUG_LOG = Path("/Users/senzhang/mp-llp/.cursor/debug.log")
+def _agent_log(location: str, message: str, data: dict, hypothesis_id: str) -> None:
+    try:
+        with open(DEBUG_LOG, "a", encoding="utf-8") as f:
+            f.write(json.dumps({"location": location, "message": message, "data": data, "hypothesisId": hypothesis_id, "timestamp": int(datetime.now(timezone.utc).timestamp() * 1000)}) + "\n")
+    except Exception:
+        pass
+# #endregion
+
 HEARTBEAT_INTERVAL_SEC = 30
 
 # Contract: filenames written under story_path (consumers may read these)
 PROGRESS_JSON_FILENAME = "_progress.json"
 PHASE_STATUS_FILENAME = "_phase_status.txt"
 VIEWER_HTML_FILENAME = "progress_viewer.html"
+NOTIFICATION_STORY_PROGRESS_FILENAME = "notification-story-progress.mp3"
+NOTIFICATION_STORY_FINISH_FILENAME = "notification-story-finish.mp3"
+NOTIFICATION_ERROR_FILENAME = "notification-error.mp3"
 
 DEFAULT_PHASE_ORDER: tuple = ("reddit", "director", "production", "assembly")
 
@@ -66,36 +79,58 @@ class ProgressTracker:
                 "phases": dict(self._phases),
                 "phase_order": list(self._phase_names),
                 "current_step": current_step,
+                "story_path": str(self.story_path.resolve()),
             }
+            # #region agent log
+            _agent_log("tracker.py:_write_progress", "Writing _progress.json", {"story_path": str(self.story_path.resolve()), "updated_ts": payload["updated_ts"], "phases": payload["phases"]}, "H1,H3")
+            # #endregion
             (self.story_path / PROGRESS_JSON_FILENAME).write_text(
                 json.dumps(payload, indent=2), encoding="utf-8"
             )
         except Exception:
             pass
 
-    def _play_sound(self) -> None:
+    def _play_sound(self, phase: str = "") -> None:
         if not os.environ.get("PROGRESS_SOUND"):
             return
         try:
-            subprocess.run(
-                ["afplay", "/System/Library/Sounds/Glass.aiff"],
-                capture_output=True,
-                timeout=2,
-            )
+            parent = Path(__file__).resolve().parent
+            # Use story-finish sound when director phase completes; otherwise progress sound
+            if phase == "director":
+                name = NOTIFICATION_STORY_FINISH_FILENAME
+            else:
+                name = NOTIFICATION_STORY_PROGRESS_FILENAME
+            in_story = self.story_path / name
+            pkg_path = parent / name
+            path = in_story if in_story.exists() else pkg_path
+            if path.exists():
+                subprocess.run(
+                    ["afplay", str(path)],
+                    capture_output=True,
+                    timeout=5,
+                )
         except Exception:
             pass
 
     def ensure_viewer(self) -> None:
-        """Copy progress_viewer.html into story folder (idempotent)."""
+        """Copy progress_viewer.html and notification sound into story folder (idempotent)."""
         try:
-            template = Path(__file__).resolve().parent / VIEWER_HTML_FILENAME
+            parent = Path(__file__).resolve().parent
+            template = parent / VIEWER_HTML_FILENAME
             if template.exists():
                 shutil.copy(template, self.story_path / VIEWER_HTML_FILENAME)
+            for name in (NOTIFICATION_STORY_PROGRESS_FILENAME, NOTIFICATION_STORY_FINISH_FILENAME, NOTIFICATION_ERROR_FILENAME):
+                sound_src = parent / name
+                if sound_src.exists():
+                    shutil.copy(sound_src, self.story_path / name)
         except Exception:
             pass
 
     def _heartbeat_loop(self) -> None:
         """Refresh _progress.json every HEARTBEAT_INTERVAL_SEC so 'Last updated' shows process is alive."""
+        # #region agent log
+        _agent_log("tracker.py:_heartbeat_loop", "Heartbeat loop started", {"story_path": str(self.story_path.resolve())}, "H3")
+        # #endregion
         while not self._heartbeat_stop.wait(timeout=HEARTBEAT_INTERVAL_SEC):
             self._write_progress()
 
@@ -116,7 +151,7 @@ class ProgressTracker:
         self._phases[phase] = "done"
         self._write_progress(current_step=current_step)
         if play_sound:
-            self._play_sound()
+            self._play_sound(phase)
 
     def complete(self) -> None:
         """Mark all phases done and set status to complete. Stop heartbeat."""

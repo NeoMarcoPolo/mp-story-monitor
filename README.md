@@ -35,7 +35,7 @@ The progress viewer shows the full story skeleton (title, logline, Images/Audio/
 Run an HTTP server from the **story folder** (the folder that contains `_progress.json` and `progress_viewer.html`):
 
 - `python -m http.server 8765`
-- Or use your pipeline’s progress server script (e.g. `serve_progress.py` from mp-auto-generate).
+- Or use your pipeline’s progress server script (e.g. `serve_progress.py` from mp-auto-generate). **Built-in server in this package:** `python -m mp_story_monitor.serve_progress --port 8081 /path/to/story` (no-cache for JSON). Pipelines call `mp_story_monitor.serve_progress.serve(story_path, port)`.
 
 ## Exports
 

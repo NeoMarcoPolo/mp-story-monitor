@@ -14,4 +14,4 @@ dependencies = []
 where = ["src"]
 
 [tool.setuptools.package-data]
-mp_story_monitor = ["*.html"]
+mp_story_monitor = ["*.html", "*.mp3"]

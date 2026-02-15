@@ -1,0 +1,19 @@
+{
+  "job_id": "job-alpha-99",
+  "workflow": "two_girl_reddit_story",
+  "updated_ts": "2026-02-15T18:52:04.893752+00:00",
+  "phases": {
+    "reddit": "done",
+    "director": "running",
+    "production": "pending",
+    "assembly": "pending"
+  },
+  "phase_order": [
+    "reddit",
+    "director",
+    "production",
+    "assembly"
+  ],
+  "current_step": "Generating aesthetic description for Chapter 2...",
+  "story_path": "/Users/senzhang/mp-llp/mp-story-monitor/ui_test"
+}

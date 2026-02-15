@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pipeline Monitor</title>
+  <style>
+    :root {
+      /* High Contrast Technical Theme */
+      --black: #050505;
+      --dark-gray: #111111;
+      --mid-gray: #333333;
+      --light-gray: #e5e5e5;
+      --white: #ffffff;
+
+      /* Vibrant Accent */
+      --accent: #00ecff;
+      /* Cyan/Electric Blue for high visibility against black */
+      --accent-dim: rgba(0, 236, 255, 0.1);
+
+      /* Semantic Colors */
+      --bg: var(--black);
+      --card-bg: var(--dark-gray);
+      --border: var(--mid-gray);
+      --text-primary: var(--white);
+      --text-secondary: #888888;
+
+      --success: #00ff9d;
+      --running: var(--accent);
+      --pending: #444444;
+      --error: #ff0055;
+
+      /* Spacing */
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "SF Mono", "Menlo", "Monaco", "Courier New", monospace;
+      /* Technical feel */
+      background: var(--bg);
+      color: var(--text-primary);
+      margin: 0;
+      padding: var(--space-lg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* Layout Grid */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: var(--space-lg);
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: var(--space-md);
+      margin-bottom: var(--space-md);
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      text-transform: uppercase;
+    }
+
+    .meta-camp {
+      display: flex;
+      gap: var(--space-md);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+
+    .meta-value {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Card Consistencies */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: var(--space-md);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-title {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      margin: 0 0 var(--space-md) 0;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: var(--space-sm);
+    }
+
+    /* Phases Stepper */
+    .phase-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .phase-item {
+      display: flex;
+      align-items: center;
+      padding: var(--space-sm) var(--space-md);
+      border-left: 2px solid var(--border);
+      position: relative;
+      background: transparent;
+      transition: background 0.2s;
+    }
+
+    .phase-item:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .phase-item.running {
+      border-left-color: var(--running);
+      background: var(--accent-dim);
+    }
+
+    .phase-item.done {
+      border-left-color: var(--success);
+    }
+
+    .phase-item.pending {
+      border-left-color: var(--pending);
+      color: var(--text-secondary);
+    }
+
+    .phase-icon {
+      margin-right: var(--space-md);
+      font-weight: bold;
+      width: 1.5em;
+      text-align: center;
+    }
+
+    .phase-name {
+      font-weight: 600;
+      flex: 1;
+    }
+
+    .phase-status {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      font-weight: bold;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      border: 1px solid currentColor;
+    }
+
+    .status-badge.running {
+      color: var(--running);
+      border-color: var(--running);
+      box-shadow: 0 0 5px var(--running);
+    }
+
+    .status-badge.done {
+      color: var(--success);
+      border-color: var(--success);
+    }
+
+    .status-badge.pending {
+      color: var(--text-secondary);
+      border-color: var(--border);
+    }
+
+    .status-badge.error {
+      color: var(--error);
+      border-color: var(--error);
+    }
+
+
+    /* Story Dashboard */
+    .story-title-large {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin: 0 0 var(--space-sm) 0;
+      line-height: 1.2;
+    }
+
+    .logline {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-lg);
+      font-style: italic;
+      border-left: 3px solid var(--accent);
+      padding-left: var(--space-md);
+    }
+
+    /* Asset Grid */
+    .asset-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      /* Gap for border effect */
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: var(--space-lg);
+    }
+
+    .asset-stat {
+      background: var(--card-bg);
+      padding: var(--space-md);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .asset-shape-wrap {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Shape: Image = rectangle (frame) */
+    .asset-shape-image {
+      width: 28px;
+      height: 20px;
+      border: 2px solid currentColor;
+      border-radius: 2px;
+      background: transparent;
+    }
+
+    /* Shape: Video = rectangle with play triangle */
+    .asset-shape-video {
+      width: 28px;
+      height: 20px;
+      border: 2px solid currentColor;
+      border-radius: 2px;
+      background: transparent;
+      position: relative;
+    }
+
+    .asset-shape-video::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-40%, -50%);
+      border-width: 6px 0 6px 10px;
+      border-style: solid;
+      border-color: transparent transparent transparent currentColor;
+    }
+
+    /* Shape: Audio = 3 bars (waveform) */
+    .asset-shape-audio {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 20px;
+    }
+
+    .asset-shape-audio span {
+      width: 4px;
+      background: currentColor;
+      border-radius: 1px;
+    }
+
+    .asset-shape-audio span:nth-child(1) {
+      height: 10px;
+    }
+
+    .asset-shape-audio span:nth-child(2) {
+      height: 18px;
+    }
+
+    .asset-shape-audio span:nth-child(3) {
+      height: 14px;
+    }
+
+    /* Shape: Text = 3 lines (document) */
+    .asset-shape-text {
+      width: 24px;
+      height: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      justify-content: center;
+    }
+
+    .asset-shape-text span {
+      height: 2px;
+      background: currentColor;
+      border-radius: 1px;
+    }
+
+    .asset-shape-text span:nth-child(1) {
+      width: 100%;
+    }
+
+    .asset-shape-text span:nth-child(2) {
+      width: 85%;
+    }
+
+    .asset-shape-text span:nth-child(3) {
+      width: 70%;
+    }
+
+    .asset-val {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: block;
+    }
+
+    .asset-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-top: 0;
+      display: block;
+    }
+
+    /* Chapters List */
+    .chapter-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .chapter-block {
+      border: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .chapter-header {
+      padding: var(--space-sm) var(--space-md);
+      background: rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chapter-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .scene-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .scene-table th,
+    .scene-table td {
+      padding: var(--space-sm) var(--space-md);
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scene-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .scene-table th {
+      color: var(--text-secondary);
+      font-weight: 400;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scene-assets-cell {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .mini-badge {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .mini-badge.has-assets {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Inline shapes for scene badges (small) */
+    .mini-badge .asset-shape-image {
+      width: 14px;
+      height: 10px;
+      border-width: 1px;
+    }
+
+    .mini-badge .asset-shape-video {
+      width: 14px;
+      height: 10px;
+      border-width: 1px;
+    }
+
+    .mini-badge .asset-shape-video::after {
+      border-width: 3px 0 3px 5px;
+    }
+
+    .mini-badge .asset-shape-audio {
+      height: 10px;
+    }
+
+    .mini-badge .asset-shape-audio span {
+      width: 2px;
+    }
+
+    .mini-badge .asset-shape-audio span:nth-child(1) {
+      height: 5px;
+    }
+
+    .mini-badge .asset-shape-audio span:nth-child(2) {
+      height: 9px;
+    }
+
+    .mini-badge .asset-shape-audio span:nth-child(3) {
+      height: 7px;
+    }
+
+    .mini-badge .asset-shape-text {
+      width: 12px;
+      height: 10px;
+      gap: 1px;
+    }
+
+    .mini-badge .asset-shape-text span {
+      height: 1px;
+    }
+
+    .mini-badge .asset-shape-text span:nth-child(2) {
+      width: 80%;
+    }
+
+    .mini-badge .asset-shape-text span:nth-child(3) {
+      width: 60%;
+    }
+
+    /* Utilities */
+    .spinner {
+      display: inline-block;
+      animation: spin 1s steps(8) infinite;
+    }
+
+    @keyframes spin {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .blink {
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .text-mono {
+      font-family: monospace;
+    }
+
+    .text-dim {
+      color: var(--text-secondary);
+    }
+
+    .text-accent {
+      color: var(--accent);
+    }
+
+    .updated-bar {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: var(--space-sm);
+      text-align: right;
+    }
+
+    .updated-bar.stale {
+      color: var(--error);
+      font-weight: 700;
+      animation: pulse-stale 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-stale {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.75;
+      }
+    }
+
+    .generating-status {
+      margin-top: var(--space-sm);
+      font-size: 0.8rem;
+      min-height: 1.5em;
+    }
+
+    .generating-status .generating-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--running);
+      font-weight: 600;
+      animation: generating-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes generating-pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.85;
+      }
+    }
+
+    .generating-status .generating-line .spinner {
+      display: inline-block;
+      font-size: 1.1em;
+    }
+
+    .generating-status .stale-warning {
+      display: block;
+      margin-top: 6px;
+      color: var(--error);
+      font-weight: 600;
+    }
+
+    /* Main card pulse when a phase is generating */
+    .card.phase-generating {
+      position: relative;
+      border-top: 2px solid var(--running);
+      animation: card-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes card-pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(0, 236, 255, 0);
+      }
+
+      50% {
+        box-shadow: 0 0 12px 0 rgba(0, 236, 255, 0.25);
+      }
+    }
+
+    @keyframes pulse-border {
+      0% {
+        border-left-color: var(--running);
+        background: var(--accent-dim);
+      }
+
+      50% {
+        border-left-color: transparent;
+        background: transparent;
+      }
+
+      100% {
+        border-left-color: var(--running);
+        background: var(--accent-dim);
+      }
+    }
+
+    .blink-border {
+      animation: pulse-border 2s infinite;
+    }
+
+    /* --- CINEMA MODE / SCREENPLAY STYLING --- */
+    .screenplay-container {
+      font-family: "Courier Prime", "Courier New", Courier, monospace;
+      background: #1a1a1a;
+      padding: var(--space-lg);
+      border: 1px solid #333;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      color: #ddd;
+      max-width: 800px;
+      /* Standard script width approximation */
+      margin: 0 auto;
+    }
+
+    .sp-slugline {
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: var(--white);
+      border-bottom: 1px solid #333;
+      padding-bottom: 4px;
+    }
+
+    .sp-action {
+      margin-bottom: 1rem;
+      line-height: 1.4;
+    }
+
+    .sp-character {
+      text-align: center;
+      font-weight: bold;
+      margin-top: 1rem;
+      margin-bottom: 0px;
+      width: 60%;
+      margin-left: auto;
+      margin-right: auto;
+      text-transform: uppercase;
+    }
+
+    .sp-dialogue {
+      text-align: center;
+      width: 80%;
+      margin-left: auto;
+      margin-right: auto;
+      margin-bottom: 1rem;
+    }
+
+    .sp-transition {
+      text-align: right;
+      text-transform: uppercase;
+      margin-top: 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+
+    /* Shot List / Asset Details */
+    .shot-list {
+      margin-top: 1rem;
+      border-top: 1px dashed #333;
+      padding-top: 0.5rem;
+      font-family: "SF Mono", "Menlo", monospace;
+      font-size: 0.8rem;
+    }
+
+    .shot-item {
+      display: grid;
+      grid-template-columns: 24px 80px 1fr 80px;
+      gap: var(--space-sm);
+      padding: 4px 0;
+      align-items: start;
+      border-bottom: 1px solid #222;
+      color: #888;
+    }
+
+    .shot-item:last-child {
+      border-bottom: none;
+    }
+
+    .shot-prompt {
+      color: #ddd;
+      white-space: pre-wrap;
+    }
+
+    .shot-meta {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      opacity: 0.7;
+    }
+
+    .toggle-shots-btn {
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      font-family: inherit;
+      font-size: 0.75rem;
+      cursor: pointer;
+      padding: 0;
+      margin-top: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .toggle-shots-btn:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="header">
+      <div class="title">MP STORY MONITOR</div>
+      <div class="meta" id="jobId">Job: ...</div>
+      <div class="meta" id="workflowName">Workflow: ...</div>
+      <div class="meta" id="lastUpdated">Updated: ...</div>
+    </div>
+  </header>
+
+  <div class="dashboard">
+    <!-- Sidebar: Phases -->
+    <aside>
+      <div class="card">
+        <div class="card-title">Pipeline Status</div>
+        <div id="phasesList" class="phase-list">
+          <!-- Populated by JS -->
+          <div class="phase-item pending">Loading...</div>
+        </div>
+        <div id="lastUpdated" class="updated-bar"></div>
+        <div id="generatingStatus" class="generating-status"></div>
+      </div>
+
+      <div class="card" style="margin-top: var(--space-lg); border-color: var(--border);">
+        <div class="card-title">Output Folder</div>
+        <div
+          style="font-size: 0.8rem; word-break: break-all; color: var(--text-secondary); margin-bottom: var(--space-sm);">
+          <code id="outputPath" style="user-select: all; cursor: pointer;" title="Click to copy">--</code>
+        </div>
+        <button id="copyPathBtn"
+          style="background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 4px 8px; font-family: inherit; font-size: 0.75rem; cursor: pointer; text-transform: uppercase;">Copy
+          Path</button>
+      </div>
+
+      <div class="card" style="margin-top: var(--space-lg); border-color: var(--border);">
+        <div class="card-title">System Status</div>
+        <div style="font-size: 0.8rem; color: var(--text-secondary);">
+          Server: <span style="color: var(--success);">Online</span><br>
+          <br>
+          <div style="font-size: 0.7rem; opacity: 0.7;">
+            Refreshes every 2s<br>
+            Run: <code>python -m http.server</code> in story folder to view.
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content: Application State -->
+    <main id="mainContent">
+      <div class="card">
+        <div class="card-title">Story Intelligence</div>
+        <div id="storyBoard">
+          <div style="padding: var(--space-lg); text-align: center; color: var(--text-secondary);">
+            <span class="spinner">/</span> Waiting for data...
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const els = {
+      phases: document.getElementById("phasesList"),
+      jobId: document.getElementById("jobId"),
+      workflowName: document.getElementById("workflowName"),
+      updated: document.getElementById("lastUpdated"),
+      generatingStatus: document.getElementById("generatingStatus"),
+      storyBoard: document.getElementById("storyBoard"),
+      conn: document.getElementById("connectionStatus"),
+      outPath: document.getElementById("outputPath"),
+      copyBtn: document.getElementById("copyPathBtn")
+    };
+
+    function escapeHtml(s) {
+      if (!s) return "";
+      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    /** Returns HTML for the shape icon of an asset type (image, video, audio, text). */
+    function shapeHtml(type) {
+      const t = (type || "").toLowerCase();
+      if (t === "image") return '<div class="asset-shape-image"></div>';
+      if (t === "video") return '<div class="asset-shape-video"></div>';
+      if (t === "audio") return '<div class="asset-shape-audio"><span></span><span></span><span></span></div>';
+      if (t === "text") return '<div class="asset-shape-text"><span></span><span></span><span></span></div>';
+      return "";
+    }
+
+    function formatTimeAgo(ts) {
+      if (!ts) return "";
+      const t = new Date(ts).getTime();
+      const s = Math.round((Date.now() - t) / 1000);
+      return s < 60 ? `${s}s ago` : `${Math.floor(s / 60)}m ago`;
+    }
+
+    // Copy path logic
+    if (els.copyBtn) {
+      els.copyBtn.addEventListener("click", () => {
+        const text = els.outPath.textContent;
+        if (text && text !== "--") {
+          navigator.clipboard.writeText(text).then(() => {
+            const originalText = els.copyBtn.textContent;
+            els.copyBtn.textContent = "COPIED!";
+            setTimeout(() => els.copyBtn.textContent = originalText, 2000);
+          });
+        }
+      });
+    }
+
+    function renderPhases(data) {
+      if (!data || !data.phases) return;
+
+      els.jobId.textContent = data.job_id || "--";
+      els.workflowName.textContent = data.workflow || "--";
+
+      // Show "Generating…" when any phase is running; "Stale?" if no update for 2+ min
+      const anyRunning = data.phases && Object.values(data.phases).some(v => v === "running");
+      const updatedTs = data.updated_ts ? new Date(data.updated_ts).getTime() : 0;
+      const secondsAgo = updatedTs ? Math.round((Date.now() - updatedTs) / 1000) : 0;
+      const stale = anyRunning && secondsAgo >= 120;
+      const timeStr = formatTimeAgo(data.updated_ts);
+      if (els.updated) {
+        els.updated.textContent = stale ? "⚠ Stuck? Last update: " + timeStr : "Last update: " + timeStr;
+        els.updated.classList.toggle("stale", stale);
+      }
+      if (els.generatingStatus) {
+        if (anyRunning) {
+          els.generatingStatus.innerHTML = '<span class="generating-line"><span class="spinner">◐</span> Generating…</span>' +
+            (stale ? '<span class="stale-warning">No update for ' + (secondsAgo >= 60 ? Math.floor(secondsAgo / 60) + 'm' : secondsAgo + 's') + ' — check terminal.</span>' : '');
+        } else {
+          els.generatingStatus.innerHTML = '';
+        }
+      }
+
+      if (data.story_path && els.outPath) {
+        els.outPath.textContent = data.story_path;
+        els.outPath.title = "Click to copy: " + data.story_path;
+      }
+
+      const order = (data.phase_order && data.phase_order.length) ? data.phase_order : Object.keys(data.phases);
+
+      const html = order.map(key => {
+        const status = data.phases[key] || "pending";
+        const label = key.toUpperCase().replace(/_/g, " ");
+
+        let icon = "○";
+        let iconClass = "phase-icon";
+
+        if (status === "done") {
+          icon = "●";
+        } else if (status === "running") {
+          icon = "◐";
+          iconClass += " spinner"; // Spin the icon
+        }
+
+        const badgeClass = `status-badge ${status}`;
+
+        // Add a pulsing effect to the running item
+        const itemClass = `phase-item ${status} ${status === 'running' ? 'blink-border' : ''}`;
+
+        return `
+                <div class="${itemClass}">
+                    <div class="${iconClass}">${icon}</div>
+                    <div class="phase-name">${label}</div>
+                    <div class="${badgeClass}">${status}</div>
+                </div>
+            `;
+      }).join("");
+
+      els.phases.innerHTML = html;
+    }
+
+    function renderStory(d) {
+      if (!d || (!d.title && !d.chapters)) {
+        els.storyBoard.innerHTML = '<div style="padding:2rem;color:var(--text-secondary);">No story data available yet...</div>';
+        return;
+      }
+
+      const title = escapeHtml(d.title || "Untitled Story");
+      const logline = escapeHtml(d.logline || "No logline generated yet.");
+
+      // Assets Summary
+      const assets = d.assets_by_type || {};
+      const assetHtml = ["image", "audio", "video", "text"].map(type => `
+            <div class="asset-stat">
+                <div class="asset-shape-wrap">${shapeHtml(type)}</div>
+                <span class="asset-val">${assets[type] || 0}</span>
+                <span class="asset-label">${type}s</span>
+            </div>
+        `).join("");
+
+      // Chapters rendered as Screenplay
+      const chaptersHtml = (d.chapters || []).map((c, i) => {
+        const cTitle = escapeHtml(c.title || `Chapter ${i + 1}`);
+        const scenes = c.scenes || [];
+
+        const scenesHtml = scenes.map((s, si) => {
+          const sName = escapeHtml(s.name || `Scene ${si + 1}`);
+          const sSummary = escapeHtml(s.summary || "");
+          const sAssets = s.assets_by_type || {};
+
+          // Format summary as Action or simple text if it lacks structure
+          // Try to parse rudimentary character/dialogue if present (simple heuristic)
+          // For now, treat summary as Action Block
+
+          const assetsList = s.assets || [];
+          let shotsHtml = "";
+
+          if (assetsList.length > 0) {
+            shotsHtml = `<div class="shot-list" style="display:none;" id="shots-${i}-${si}">`;
+            shotsHtml += assetsList.map(a => {
+              const name = a.asset_name || a.assetName || "(unnamed)";
+              const type = a.type || "unknown";
+              const workflow = a.workflow || "";
+              const status = a.status || "pending";
+              const params = a.params || {};
+
+              // Format params as a clean list, excluding empty/null; truncate long prompt for display
+              const paramRows = Object.entries(params)
+                .filter(([_, v]) => v !== null && v !== "" && v !== undefined)
+                .map(([k, v]) => {
+                  let val = (typeof v === 'object') ? JSON.stringify(v) : String(v);
+                  if (k === 'prompt' && val.length > 120) val = val.slice(0, 117) + '...';
+                  const valFormatted = escapeHtml(val);
+                  return `<div style="display:flex; gap:10px; margin-top:2px;">
+                                     <span style="color:#666; min-width:80px; text-align:right;">${escapeHtml(k)}:</span>
+                                     <span style="color:#ccc; flex:1;">${valFormatted}</span>
+                                   </div>`;
+                }).join("");
+
+              return `
+                    <div class="shot-item">
+                        <div class="shot-icon" title="${type}">${shapeHtml(type)}</div>
+                        <div class="shot-meta" style="color:var(--accent); font-weight:bold;">${escapeHtml(name)} · ${escapeHtml(workflow)}</div>
+                        <div class="shot-prompt">
+                            ${paramRows || '<span style="color:#555;">(No parameters)</span>'}
+                        </div>
+                        <div class="shot-meta" style="text-align:right;">${escapeHtml(status)}</div>
+                    </div>
+                   `;
+            }).join("");
+            shotsHtml += `</div>`;
+          }
+
+          const assetCountBadge = assetsList.length > 0
+            ? `<button class="toggle-shots-btn" onclick="document.getElementById('shots-${i}-${si}').style.display = document.getElementById('shots-${i}-${si}').style.display === 'none' ? 'block' : 'none'">
+                     [ + ] SHOW ${assetsList.length} ASSETS
+                   </button>`
+            : "";
+
+          return `
+             <div class="sp-slugline">${sName.toUpperCase()}</div>
+             <div class="sp-action">${sSummary}</div>
+             <!-- Asset Badges for this scene -->
+             <div style="display:flex; flex-direction:column; align-items:flex-end; margin-bottom:1rem;">
+                <div style="display:flex; gap:8px; opacity:0.7;">
+                    ${Object.entries(sAssets).map(([k, v]) => v > 0 ? `<span class="mini-badge has-assets" style="border-style:dashed;">${k}:${v}</span>` : '').join('')}
+                </div>
+                ${assetCountBadge}
+                ${shotsHtml}
+             </div>
+           `;
+        }).join("");
+
+        return `
+            <div style="margin-bottom: 2rem;">
+                <div style="text-align:center; text-transform:uppercase; text-decoration:underline; font-weight:bold; margin: 2rem 0 1rem 0;">${cTitle}</div>
+                ${scenesHtml}
+            </div>
+        `;
+      }).join("");
+
+      els.storyBoard.innerHTML = `
+            <div class="story-title-large" style="text-align:center; margin-bottom:0.5rem;">${title}</div>
+            <div class="logline" style="text-align:center; border:none; font-style:normal; font-family:'Courier New'; margin-bottom: 2rem;">
+                "${logline}"
+            </div>
+            
+            <div class="asset-grid">
+                ${assetHtml}
+            </div>
+
+            <div class="card-title" style="margin-top: 2rem;">Screenplay</div>
+            <div class="screenplay-container">
+                ${chaptersHtml || '<div style="text-align:center; padding:2rem; color:#666;">(SCENES NOT YET WRITTEN)</div>'}
+            </div>
+        `;
+    }
+
+    async function poll() {
+      try {
+        // Fetch main status
+        const r1 = await fetch("./_progress.json");
+        if (r1.ok) {
+          const data = await r1.json();
+          renderPhases(data);
+          els.conn.textContent = "CONNECTED";
+          els.conn.style.color = "var(--success)";
+
+          // Show "generating" animation on main card when any phase is running
+          const mainCard = document.querySelector("#mainContent .card");
+          if (mainCard) {
+            const anyRunning = data.phases && Object.values(data.phases).some(v => v === "running");
+            mainCard.classList.toggle("phase-generating", !!anyRunning);
+          }
+
+          // Fetch details if available
+          if (data.phases && (data.phases.director === "running" || data.phases.director === "done")) {
+            try {
+              const r2 = await fetch("./_director_progress.json");
+              if (r2.ok) {
+                const dData = await r2.json();
+                renderStory(dData);
+              }
+            } catch (e) { console.log("No director data yet"); }
+          }
+        } else {
+          els.conn.textContent = "OFFLINE";
+          els.conn.style.color = "var(--error)";
+        }
+      } catch (e) {
+        els.conn.textContent = "ERROR";
+        els.conn.style.color = "var(--error)";
+      }
+    }
+
+    poll();
+    setInterval(poll, 2000);
+
+  </script>
+</body>
+
+</html>
