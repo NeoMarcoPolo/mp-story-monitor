@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pipeline Progress</title>
+  <style>
+    :root {
+      /* 60/30/10: black (60%), white (30%), accent (10%) */
+      --black: #000000;
+      --white: #ffffff;
+      --accent: #2563eb;
+      --bg: var(--black);
+      --card: var(--white);
+      --text: var(--white);
+      --text-on-card: var(--black);
+      --done: var(--accent);
+      --running: var(--accent);
+      --pending: #737373;
+      --muted: #525252;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 1.5rem;
+      min-height: 100vh;
+    }
+    h1 { font-size: 1.25rem; margin: 0 0 0.5rem; font-weight: 600; }
+    .meta { font-size: 0.8rem; color: var(--muted); margin-bottom: 1.5rem; }
+    .phases {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-width: 24rem;
+    }
+    .phase {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.9rem;
+      background: var(--card);
+      color: var(--text-on-card);
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    .phase.done   { border: 3px solid var(--done); }
+    .phase.running { border: 3px solid var(--running); animation: pulse 1.5s ease-in-out infinite; }
+    .phase.pending { border: 3px solid var(--pending); opacity: 0.9; }
+    .icon { width: 1.25rem; height: 1.25rem; flex-shrink: 0; }
+    .phase.done .icon { color: var(--accent); }
+    .phase.running .icon { color: var(--accent); }
+    .phase.pending .icon { color: var(--pending); }
+    .spinner { animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.85; } }
+    .label { text-transform: capitalize; }
+    .updated { font-size: 0.75rem; color: var(--muted); margin-top: 1rem; }
+    .story-so-far {
+      margin-top: 1.25rem;
+      padding: 0.9rem;
+      background: var(--card);
+      color: var(--text-on-card);
+      border-radius: 8px;
+      border: 3px solid var(--accent);
+      max-width: 28rem;
+    }
+    .story-so-far h2 { font-size: 0.85rem; margin: 0 0 0.5rem; color: var(--accent); font-weight: 600; }
+    .story-so-far .story-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.35rem; }
+    .story-so-far .logline { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.75rem; line-height: 1.35; }
+    .story-so-far .skeleton-assets { font-size: 0.8rem; margin: 0 0 0.35rem 0; }
+    .story-so-far .skeleton-assets-line { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin-bottom: 0.5rem; }
+    .story-so-far .skeleton-label { font-weight: 600; margin-right: 0.25rem; }
+    .story-so-far .qaqc-banner { font-size: 0.85rem; font-weight: 600; color: var(--accent); margin: 0 0 0.5rem 0; padding: 0.4rem 0; border: 2px solid var(--accent); border-radius: 6px; text-align: center; }
+    .story-so-far .chapters { font-size: 0.8rem; }
+    .story-so-far .chapters ul { margin: 0; padding-left: 1.2rem; }
+    .story-so-far .chapters li { margin: 0.2rem 0; }
+    .story-so-far .chapters .chapter-list { list-style: disc; }
+    .story-so-far .chapters .scene-list { list-style: circle; padding-left: 1rem; margin-top: 0.25rem; }
+    .story-so-far .chapters .scene-item { margin: 0.15rem 0; }
+    .story-so-far .chapters .scene-summary { color: var(--muted); font-size: 0.9em; }
+    .story-so-far .chapters .scene-count { color: var(--muted); }
+    .story-so-far .chapters .scene-assets { font-size: 0.85em; color: var(--muted); margin-left: 0.25rem; }
+    .story-so-far .chapters .scene-assets .spinner { display: inline-block; }
+    .story-so-far .parallel-note { font-size: 0.75rem; color: var(--muted); margin: 0 0 0.5rem 0; }
+    .story-so-far .building-note { font-size: 0.8rem; color: var(--accent); margin: 0 0 0.5rem 0; display: flex; align-items: center; gap: 0.4rem; }
+    .story-so-far .building-note .spinner { display: inline-block; }
+    .help {
+      font-size: 0.8rem;
+      color: var(--text-on-card);
+      margin-top: 1.5rem;
+      padding: 0.75rem;
+      background: var(--card);
+      border-radius: 6px;
+    }
+    .help code { background: #e5e5e5; color: var(--black); padding: 0.1em 0.3em; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Pipeline Progress</h1>
+  <div class="meta" id="meta">–</div>
+  <div class="phases" id="phases"></div>
+  <div class="updated" id="updated"></div>
+  <div class="story-so-far" id="storySoFar" style="display:none;"></div>
+  <div class="help">
+    <strong>Is it stuck?</strong> "Last updated" refreshes every ~30s while the job is running. If it stays the same for 2+ minutes, the process may be stuck (check the terminal where the job runs).<br><br>
+    To view this page: run in the <strong>story folder</strong>:<br>
+    <code>python -m http.server 8765</code><br>
+    Or run your pipeline's progress server (e.g. <code>serve_progress.py</code> from mp-auto-generate).
+  </div>
+  <script>
+    const phasesEl = document.getElementById("phases");
+    const metaEl = document.getElementById("meta");
+    const updatedEl = document.getElementById("updated");
+    const storySoFarEl = document.getElementById("storySoFar");
+
+    function label(name) {
+      return name.charAt(0).toUpperCase() + name.slice(1).replace(/_/g, " ");
+    }
+
+    function render(data) {
+      if (!data || typeof data.phases !== "object") return;
+      metaEl.textContent = [data.job_id, data.workflow].filter(Boolean).join(" · ") || "–";
+      const order = (data.phase_order && data.phase_order.length) ? data.phase_order : Object.keys(data.phases || {});
+      phasesEl.innerHTML = order.map(name => {
+        const status = (data.phases[name] || "pending");
+        const running = status === "running";
+        const done = status === "done";
+        const icon = done ? "✓" : running ? "◐" : "○";
+        return `<div class="phase ${status}"><span class="icon ${running ? "spinner" : ""}">${icon}</span><span class="label">${label(name)}</span></div>`;
+      }).join("");
+      if (data.updated_ts) {
+        const t = new Date(data.updated_ts).getTime();
+        const s = Math.round((Date.now() - t) / 1000);
+        updatedEl.textContent = s < 60 ? `Last updated ${s}s ago` : `Last updated ${Math.floor(s / 60)}m ago`;
+      } else {
+        updatedEl.textContent = "";
+      }
+      const directorDone = data.phases.director === "done";
+      const directorRunning = data.phases.director === "running";
+      const productionPending = data.phases.production === "pending";
+      const showSkeleton = directorRunning || directorDone;
+      if (showSkeleton) {
+        storySoFarEl.style.display = "block";
+        fetch("./_director_progress.json").then(r => r.ok ? r.json() : null).then(function(d) {
+          if (d && (d.title || (d.chapters && d.chapters.length))) {
+            const n = typeof d.max_chapter_workers === "number" ? d.max_chapter_workers : 0;
+            const parallelNote = (n > 1) ? "<p class=\"parallel-note\">Processing up to " + n + " chapters in parallel</p>" : "";
+            const qaqcBanner = directorDone && productionPending ? "<p class=\"qaqc-banner\">Skeleton complete. Inspect all items below before production runs.</p>" : "";
+            const hasIncomplete = directorRunning && d.chapters && d.chapters.some(function(c) {
+              const sc = c.scene_count != null ? c.scene_count : (c.scenes && c.scenes.length) || 0;
+              if (sc === 0) return true;
+              return (c.scenes || []).some(function(s) { return (s.assets_count || 0) === 0; });
+            });
+            const buildingNote = (directorRunning && hasIncomplete) ? "<p class=\"building-note\"><span class=\"spinner\">◐</span> Filling in scenes and assets…</p>" : "";
+            const byType = d.assets_by_type || {};
+            const assetTypes = [{ key: "image", label: "Images" }, { key: "audio", label: "Audio" }, { key: "video", label: "Video" }, { key: "text", label: "Text" }];
+            const assetsLines = assetTypes.map(function(t) {
+              const n = byType[t.key];
+              return n != null && n > 0 ? "<span class=\"skeleton-assets\"><span class=\"skeleton-label\">" + t.label + ":</span>" + n + "</span>" : "<span class=\"skeleton-assets\" style=\"color:var(--muted)\"><span class=\"skeleton-label\">" + t.label + ":</span>…</span>";
+            }).join("");
+            const assetsBlock = "<div class=\"skeleton-assets-line\">" + assetsLines + "</div>";
+            const title = escapeHtml(d.title || "…");
+            const logline = (d.logline && d.logline.trim()) ? `<div class="logline">${escapeHtml(d.logline)}</div>` : "<div class=\"logline\" style=\"color:var(--muted)\">…</div>";
+            const list = (d.chapters && d.chapters.length) ? "<ul class=\"chapter-list\">" + d.chapters.map(function(c) {
+              const sceneCount = c.scene_count != null ? c.scene_count : (c.scenes && c.scenes.length) || 0;
+              const chapterSpinner = sceneCount === 0 ? " <span class=\"spinner\" style=\"font-size:0.9em\">◐</span>" : "";
+              const scenes = c.scenes && c.scenes.length ? c.scenes.map(function(s) {
+                const name = escapeHtml(s.name || "scene");
+                const summary = (s.summary && s.summary.trim()) ? " <span class=\"scene-summary\">" + escapeHtml(s.summary) + "</span>" : "";
+                const ac = s.assets_count != null ? s.assets_count : 0;
+                const sByType = s.assets_by_type || {};
+                const assetsBadge = ac > 0 ? " <span class=\"scene-assets\">✓ " + ac + " assets</span>" : " <span class=\"scene-assets\"><span class=\"spinner\">◐</span></span>";
+                const typeBadges = ["image", "audio", "video", "text"].map(function(k) {
+                  const n = sByType[k];
+                  if (n == null || n === 0) return "";
+                  const short = k === "image" ? "img" : k === "audio" ? "aud" : k === "video" ? "vid" : "txt";
+                  return " <span class=\"scene-assets\">" + n + " " + short + "</span>";
+                }).join("");
+                return "<li class=\"scene-item\">" + name + summary + assetsBadge + typeBadges + "</li>";
+              }).join("") : "";
+              const scenesUl = scenes ? "<ul class=\"scene-list\">" + scenes + "</ul>" : "";
+              return "<li class=\"chapter-item\">" + escapeHtml(c.title || "Chapter") + chapterSpinner + " <span class=\"scene-count\">(" + sceneCount + " scenes)</span>" + scenesUl + "</li>";
+            }).join("") + "</ul>" : "<p style=\"color:var(--muted)\">Chapters: …</p>";
+            storySoFarEl.innerHTML = "<h2>Story taking shape</h2>" + qaqcBanner + parallelNote + buildingNote + "<div class=\"story-title\">" + title + "</div>" + logline + assetsBlock + "<div class=\"chapters\">" + list + "</div>";
+          } else {
+            const n0 = (d && typeof d.max_chapter_workers === "number") ? d.max_chapter_workers : 0;
+            const note0 = (n0 > 1) ? "<p class=\"parallel-note\">Processing up to " + n0 + " chapters in parallel</p>" : "";
+            storySoFarEl.innerHTML = "<h2>Story taking shape</h2>" + note0 + "<p class=\"building-note\"><span class=\"spinner\">◐</span> Building skeleton…</p><div class=\"story-title\" style=\"color:var(--muted)\">…</div><div class=\"logline\" style=\"color:var(--muted)\">…</div><div class=\"skeleton-assets-line\" style=\"color:var(--muted)\"><span class=\"skeleton-assets\"><span class=\"skeleton-label\">Images:</span>…</span><span class=\"skeleton-assets\"><span class=\"skeleton-label\">Audio:</span>…</span><span class=\"skeleton-assets\"><span class=\"skeleton-label\">Video:</span>…</span><span class=\"skeleton-assets\"><span class=\"skeleton-label\">Text:</span>…</span></div><p style=\"color:var(--muted)\">Chapters: …</p>";
+          }
+        }).catch(function() {
+          storySoFarEl.innerHTML = "<h2>Story taking shape</h2><p class=\"building-note\"><span class=\"spinner\">◐</span> Loading…</p><div class=\"story-title\" style=\"color:var(--muted)\">…</div><div class=\"logline\" style=\"color:var(--muted)\">…</div><div class=\"skeleton-assets-line\" style=\"color:var(--muted)\"><span class=\"skeleton-assets\"><span class=\"skeleton-label\">Images:</span>…</span><span class=\"skeleton-assets\"><span class=\"skeleton-label\">Audio:</span>…</span><span class=\"skeleton-assets\"><span class=\"skeleton-label\">Video:</span>…</span><span class=\"skeleton-assets\"><span class=\"skeleton-label\">Text:</span>…</span></div><p style=\"color:var(--muted)\">Building…</p>";
+        });
+      } else {
+        storySoFarEl.style.display = "none";
+      }
+    }
+    function escapeHtml(s) {
+      if (!s) return "";
+      const div = document.createElement("div");
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    function showError(msg) {
+      if (metaEl) metaEl.textContent = "Error";
+      if (phasesEl) phasesEl.innerHTML = "<div class=\"phase pending\" style=\"border:3px solid var(--muted)\"><span class=\"label\">" + msg + "</span></div>";
+      if (updatedEl) updatedEl.textContent = "";
+    }
+
+    function poll() {
+      fetch("./_progress.json")
+        .then(r => { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.json(); })
+        .then(render)
+        .catch(function(err) {
+          showError("Cannot load _progress.json. Start the server from the story folder (the folder that contains this file and _progress.json): python -m http.server 8765");
+        });
+    }
+    poll();
+    setInterval(poll, 2000);
+  </script>
+</body>
+</html>

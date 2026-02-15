@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mp-story-monitor"
+version = "0.1.0"
+description = "Progress tracking and story skeleton viewer for story pipelines (QA/QC)"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+mp_story_monitor = ["*.html"]
