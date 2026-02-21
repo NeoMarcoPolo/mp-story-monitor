@@ -6,6 +6,7 @@ from .tracker import (
     PHASE_STATUS_FILENAME,
     VIEWER_HTML_FILENAME,
     DEFAULT_PHASE_ORDER,
+    write_progress_error,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "PHASE_STATUS_FILENAME",
     "VIEWER_HTML_FILENAME",
     "DEFAULT_PHASE_ORDER",
+    "write_progress_error",
 ]

@@ -11,11 +11,14 @@ Usage:
   from mp_story_monitor.serve_progress import serve
   serve(Path("/path/to/story"), port=8081)
 """
+import logging
 import os
 import socketserver
 from pathlib import Path
 
 from mp_story_monitor.tracker import ProgressTracker, VIEWER_HTML_FILENAME
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_PORT = 8081
 
@@ -31,8 +34,8 @@ def _ensure_story_folder(story_path: Path) -> None:
                 '{"phases":{},"phase_order":["reddit","director","production","assembly"],"updated_ts":""}',
                 encoding="utf-8",
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to ensure story folder setup: {e}")
 
 
 def serve(story_path: Path, port: int = DEFAULT_PORT) -> None:
@@ -79,8 +82,8 @@ def serve(story_path: Path, port: int = DEFAULT_PORT) -> None:
                     self.end_headers()
                     self.wfile.write(content)
                     return
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Failed to serve viewer HTML: {e}")
             if path_clean == "_progress.json":
                 try:
                     p = self._story_path / "_progress.json"
@@ -93,8 +96,8 @@ def serve(story_path: Path, port: int = DEFAULT_PORT) -> None:
                         self.end_headers()
                         self.wfile.write(content)
                         return
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Failed to serve _progress.json: {e}")
             if path_clean == "_director_progress.json":
                 try:
                     p = self._story_path / "_director_progress.json"
@@ -107,8 +110,8 @@ def serve(story_path: Path, port: int = DEFAULT_PORT) -> None:
                         self.end_headers()
                         self.wfile.write(content)
                         return
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Failed to serve _director_progress.json: {e}")
             super().do_GET()
 
     socketserver.TCPServer.allow_reuse_address = True

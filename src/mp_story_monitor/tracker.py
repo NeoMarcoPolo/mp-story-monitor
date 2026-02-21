@@ -67,8 +67,8 @@ class ProgressTracker:
             (self.story_path / PHASE_STATUS_FILENAME).write_text(
                 f"phase={phase}\n", encoding="utf-8"
             )
-        except Exception:
-            pass
+        except Exception as e:
+            _agent_log("tracker.py:_write_phase_status", f"Failed to write phase status: {e}", {"phase": phase, "story_path": str(self.story_path)}, "error")
 
     def _write_progress(self, current_step: str = "") -> None:
         try:
@@ -80,6 +80,7 @@ class ProgressTracker:
                 "phase_order": list(self._phase_names),
                 "current_step": current_step,
                 "story_path": str(self.story_path.resolve()),
+                "pid": os.getpid(),
             }
             # #region agent log
             _agent_log("tracker.py:_write_progress", "Writing _progress.json", {"story_path": str(self.story_path.resolve()), "updated_ts": payload["updated_ts"], "phases": payload["phases"]}, "H1,H3")
@@ -87,8 +88,8 @@ class ProgressTracker:
             (self.story_path / PROGRESS_JSON_FILENAME).write_text(
                 json.dumps(payload, indent=2), encoding="utf-8"
             )
-        except Exception:
-            pass
+        except Exception as e:
+            _agent_log("tracker.py:_write_progress", f"Failed to write progress: {e}", {"story_path": str(self.story_path)}, "error")
 
     def _play_sound(self, phase: str = "") -> None:
         if not os.environ.get("PROGRESS_SOUND"):
@@ -109,8 +110,8 @@ class ProgressTracker:
                     capture_output=True,
                     timeout=5,
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            _agent_log("tracker.py:_play_sound", f"Failed to play sound: {e}", {"phase": phase}, "error")
 
     def ensure_viewer(self) -> None:
         """Copy progress_viewer.html and notification sound into story folder (idempotent)."""
@@ -123,8 +124,8 @@ class ProgressTracker:
                 sound_src = parent / name
                 if sound_src.exists():
                     shutil.copy(sound_src, self.story_path / name)
-        except Exception:
-            pass
+        except Exception as e:
+            _agent_log("tracker.py:ensure_viewer", f"Failed to ensure viewer: {e}", {"story_path": str(self.story_path)}, "error")
 
     def _heartbeat_loop(self) -> None:
         """Refresh _progress.json every HEARTBEAT_INTERVAL_SEC so 'Last updated' shows process is alive."""
@@ -160,3 +161,25 @@ class ProgressTracker:
             self._phases[p] = "done"
         self._write_phase_status("complete")
         self._write_progress()
+
+
+def write_progress_error(story_path: Path, error: str, traceback_str: str = "") -> None:
+    """Write final error and traceback into _progress.json so the monitor can display it.
+
+    Call this from the pipeline's top-level exception handler (e.g. in generator) before
+    re-raising. Merges into existing _progress.json if present so phases/updated_ts are preserved.
+    """
+    path = Path(story_path) / PROGRESS_JSON_FILENAME
+    data: Dict = {}
+    if path.exists():
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as e:
+            _agent_log("tracker.py:write_progress_error", f"Failed to read existing progress: {e}", {"path": str(path)}, "error")
+    data["error"] = error
+    data["traceback"] = traceback_str
+    data["updated_ts"] = datetime.now(timezone.utc).isoformat()
+    try:
+        path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except Exception as e:
+        _agent_log("tracker.py:write_progress_error", f"Failed to write error progress: {e}", {"path": str(path), "error": error}, "error")
