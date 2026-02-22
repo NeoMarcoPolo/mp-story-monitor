@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story Stitch Player</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            padding: 16px 24px;
+            background: #111;
+            border-bottom: 1px solid #222;
+        }
+        header h1 {
+            font-size: 18px;
+            font-weight: 500;
+            color: #00ecff;
+        }
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 16px;
+            flex: 1;
+        }
+        .video-panel {
+            background: #151515;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .video-panel.active {
+            border-color: #00ecff;
+            box-shadow: 0 0 12px rgba(0, 236, 255, 0.2);
+        }
+        .panel-header {
+            padding: 10px 14px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #2a2a2a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-header h3 {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .panel-header .status {
+            font-size: 11px;
+            color: #666;
+        }
+        .video-container {
+            flex: 1;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            position: relative;
+        }
+        .video-container video {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .video-placeholder {
+            color: #444;
+            font-size: 14px;
+        }
+        .timeline-section {
+            background: #111;
+            border-top: 1px solid #222;
+            padding: 16px 24px;
+        }
+        .timeline-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .play-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #00ecff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .play-btn:hover {
+            background: #00d4e6;
+        }
+        .play-btn svg {
+            fill: #000;
+            width: 16px;
+            height: 16px;
+        }
+        .time-display {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
+            color: #888;
+            min-width: 120px;
+        }
+        .timeline-track {
+            height: 48px;
+            background: #1a1a1a;
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+        }
+        .timeline-progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0%;
+            background: linear-gradient(90deg, rgba(0,236,255,0.3), rgba(0,236,255,0.1));
+            border-right: 2px solid #00ecff;
+            transition: width 0.1s linear;
+        }
+        .timeline-scenes {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+        }
+        .scene-block {
+            flex: 1;
+            border-right: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #555;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .scene-block:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .scene-block:last-child {
+            border-right: none;
+        }
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+        .speed-control label {
+            font-size: 12px;
+            color: #666;
+        }
+        .speed-control select {
+            background: #222;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Story Stitch Player</h1>
+    </header>
+
+    <div class="video-grid">
+        <div class="video-panel active" data-method="next_scene">
+            <div class="panel-header">
+                <h3>NextScene</h3>
+                <span class="status">0 / 0 scenes</span>
+            </div>
+            <div class="video-container">
+                <video muted></video>
+                <span class="video-placeholder">No video loaded</span>
+            </div>
+        </div>
+
+        <div class="video-panel" data-method="ltx2">
+            <div class="panel-header">
+                <h3>LTX2</h3>
+                <span class="status">0 / 0 scenes</span>
+            </div>
+            <div class="video-container">
+                <video muted></video>
+                <span class="video-placeholder">No video loaded</span>
+            </div>
+        </div>
+
+        <div class="video-panel" data-method="infinity_talk">
+            <div class="panel-header">
+                <h3>InfinityTalk</h3>
+                <span class="status">0 / 0 scenes</span>
+            </div>
+            <div class="video-container">
+                <video muted></video>
+                <span class="video-placeholder">No video loaded</span>
+            </div>
+        </div>
+
+        <div class="video-panel" data-method="wan_i2v">
+            <div class="panel-header">
+                <h3>Wan I2V</h3>
+                <span class="status">0 / 0 scenes</span>
+            </div>
+            <div class="video-container">
+                <video muted></video>
+                <span class="video-placeholder">No video loaded</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="timeline-section">
+        <div class="timeline-controls">
+            <button class="play-btn" id="playBtn">
+                <svg viewBox="0 0 24 24" id="playIcon"><polygon points="5,3 19,12 5,21"></polygon></svg>
+            </button>
+            <span class="time-display" id="timeDisplay">00:00 / 00:00</span>
+            <div class="speed-control">
+                <label>Speed:</label>
+                <select id="speedSelect">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+        <div class="timeline-track" id="timeline">
+            <div class="timeline-progress" id="progress"></div>
+            <div class="timeline-scenes" id="sceneBlocks"></div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data structure - replace with actual data from your JSON
+        let storyData = {
+            story_id: "preview",
+            total_duration: 60,
+            scenes: [
+                { id: 1, start: 0, duration: 10, label: "Scene 1" },
+                { id: 2, start: 10, duration: 15, label: "Scene 2" },
+                { id: 3, start: 25, duration: 20, label: "Scene 3" },
+                { id: 4, start: 45, duration: 15, label: "Scene 4" }
+            ],
+            methods: {
+                next_scene: [],
+                ltx2: [],
+                infinity_talk: [],
+                wan_i2v: []
+            }
+        };
+
+        let isPlaying = false;
+        let currentTime = 0;
+        let playbackSpeed = 1;
+        let animationFrame = null;
+        let lastTimestamp = null;
+
+        const playBtn = document.getElementById('playBtn');
+        const playIcon = document.getElementById('playIcon');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const progress = document.getElementById('progress');
+        const sceneBlocks = document.getElementById('sceneBlocks');
+        const timeline = document.getElementById('timeline');
+        const speedSelect = document.getElementById('speedSelect');
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updateUI() {
+            const pct = (currentTime / storyData.total_duration) * 100;
+            progress.style.width = pct + '%';
+            timeDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(storyData.total_duration)}`;
+        }
+
+        function renderSceneBlocks() {
+            sceneBlocks.innerHTML = '';
+            storyData.scenes.forEach(scene => {
+                const block = document.createElement('div');
+                block.className = 'scene-block';
+                block.textContent = scene.label;
+                block.style.flex = scene.duration;
+                block.onclick = () => seekTo(scene.start);
+                sceneBlocks.appendChild(block);
+            });
+        }
+
+        function seekTo(time) {
+            currentTime = time;
+            updateUI();
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            if (isPlaying) {
+                playIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>';
+                lastTimestamp = performance.now();
+                animate();
+            } else {
+                playIcon.innerHTML = '<polygon points="5,3 19,12 5,21"></polygon>';
+                cancelAnimationFrame(animationFrame);
+            }
+        }
+
+        function animate(timestamp) {
+            if (!isPlaying) return;
+
+            if (lastTimestamp) {
+                const delta = (timestamp - lastTimestamp) / 1000 * playbackSpeed;
+                currentTime += delta;
+
+                if (currentTime >= storyData.total_duration) {
+                    currentTime = 0;
+                }
+                updateUI();
+            }
+            lastTimestamp = timestamp;
+            animationFrame = requestAnimationFrame(animate);
+        }
+
+        // Event listeners
+        playBtn.onclick = togglePlay;
+        speedSelect.onchange = (e) => { playbackSpeed = parseFloat(e.target.value); };
+        timeline.onclick = (e) => {
+            const rect = timeline.getBoundingClientRect();
+            const pct = (e.clientX - rect.left) / rect.width;
+            seekTo(pct * storyData.total_duration);
+        };
+
+        // Load data from JSON file if available
+        async function loadStoryData() {
+            try {
+                const response = await fetch('story_data.json');
+                if (response.ok) {
+                    storyData = await response.json();
+                }
+            } catch (e) {
+                console.log('Using default story data');
+            }
+            renderSceneBlocks();
+            updateUI();
+        }
+
+        loadStoryData();
+    </script>
+</body>
+</html>

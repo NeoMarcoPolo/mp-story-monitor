@@ -1,7 +1,7 @@
 {
   "job_id": "job-alpha-99",
   "workflow": "two_girl_reddit_story",
-  "updated_ts": "2026-02-15T18:52:04.893752+00:00",
+  "updated_ts": "2026-02-21T20:50:25.925051+00:00",
   "phases": {
     "reddit": "done",
     "director": "running",

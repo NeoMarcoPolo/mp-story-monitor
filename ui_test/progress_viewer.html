@@ -56,7 +56,7 @@
       line-height: 1.5;
     }
 
-    /* Layout Grid */
+    /* Layout Grid: sidebar collapses to narrow strip so main area expands */
     .dashboard {
       display: grid;
       grid-template-columns: 300px 1fr;
@@ -64,11 +64,77 @@
       max-width: 1400px;
       margin: 0 auto;
       width: 100%;
+      transition: grid-template-columns 0.2s ease;
+    }
+    .dashboard.sidebar-collapsed {
+      grid-template-columns: 48px 1fr;
+    }
+
+    .sidebar-column {
+      display: flex;
+      flex-direction: row;
+      min-width: 0;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      transition: width 0.2s ease;
+    }
+    .sidebar-column .sidebar-content {
+      flex: 1;
+      min-width: 0;
+      overflow: auto;
+      padding: var(--space-md);
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .sidebar-column.collapsed .sidebar-content {
+      display: none;
+    }
+    .sidebar-toggle-strip {
+      width: 48px;
+      min-width: 48px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-left: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .sidebar-column.collapsed .sidebar-toggle-strip {
+      border-left: none;
+      border-right: 1px solid var(--border);
+    }
+    .sidebar-toggle-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-family: inherit;
+      padding: 0;
+    }
+    .sidebar-toggle-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .sidebar-column.collapsed .sidebar-toggle-btn {
+      transform: rotate(180deg);
     }
 
     @media (max-width: 900px) {
       .dashboard {
         grid-template-columns: 1fr;
+      }
+      .dashboard.sidebar-collapsed {
+        grid-template-columns: 1fr;
+      }
+      .sidebar-column.collapsed .sidebar-content {
+        display: none;
       }
     }
 
@@ -80,6 +146,36 @@
       border-bottom: 1px solid var(--border);
       padding-bottom: var(--space-md);
       margin-bottom: var(--space-md);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      gap: var(--space-lg);
+    }
+
+    .header .title {
+      font-size: 2.25rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      text-transform: uppercase;
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    .header .header-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.25rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .header .header-meta .meta {
+      margin: 0;
     }
 
     h1 {
@@ -127,6 +223,54 @@
       padding-bottom: var(--space-sm);
     }
 
+    /* Collapsible sidebar panels */
+    .sidebar-panel {
+      margin-bottom: var(--space-lg);
+    }
+    .sidebar-panel:last-child {
+      margin-bottom: 0;
+    }
+    .sidebar-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      padding: var(--space-sm) 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      gap: var(--space-sm);
+    }
+    .sidebar-panel-header:hover {
+      color: var(--accent);
+    }
+    .sidebar-panel-header .card-title {
+      margin: 0;
+      border: none;
+      padding: 0;
+      flex: 1;
+    }
+    .sidebar-panel-chevron {
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+    }
+    .sidebar-panel.expanded .sidebar-panel-chevron {
+      transform: rotate(180deg);
+    }
+    .sidebar-panel-body {
+      padding-top: var(--space-md);
+      overflow: hidden;
+    }
+    .sidebar-panel.collapsed .sidebar-panel-body {
+      display: none;
+    }
+
     /* Phases Stepper */
     .phase-list {
       display: flex;
@@ -138,7 +282,7 @@
       display: flex;
       align-items: center;
       padding: var(--space-sm) var(--space-md);
-      border-left: 2px solid var(--border);
+      border: 1px solid var(--border);
       position: relative;
       background: transparent;
       transition: background 0.2s;
@@ -149,16 +293,16 @@
     }
 
     .phase-item.running {
-      border-left-color: var(--running);
+      border-color: var(--running);
       background: var(--accent-dim);
     }
 
     .phase-item.done {
-      border-left-color: var(--success);
+      border-color: var(--success);
     }
 
     .phase-item.pending {
-      border-left-color: var(--pending);
+      border-color: var(--pending);
       color: var(--text-secondary);
     }
 
@@ -211,6 +355,39 @@
       border-color: var(--error);
     }
 
+    .copy-error-btn {
+      background: transparent;
+      border: 1px solid var(--error);
+      color: var(--error);
+      padding: 4px 8px;
+      font-family: inherit;
+      font-size: 0.75rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .copy-error-btn:hover {
+      opacity: 0.9;
+    }
+    .pipeline-error-card .pipeline-error-summary {
+      font-weight: 600;
+      color: var(--error);
+      margin-bottom: 0.5rem;
+    }
+    .pipeline-traceback {
+      font-size: 0.75rem;
+      font-family: ui-monospace, monospace;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.75rem;
+      margin: 0;
+      max-height: 280px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: #ccc;
+    }
 
     /* Story Dashboard */
     .story-title-large {
@@ -225,8 +402,8 @@
       color: var(--text-secondary);
       margin-bottom: var(--space-lg);
       font-style: italic;
-      border-left: 3px solid var(--accent);
-      padding-left: var(--space-md);
+      border: 1px solid var(--accent);
+      padding: var(--space-md);
     }
 
     /* Asset Grid */
@@ -262,7 +439,7 @@
     .asset-shape-image {
       width: 28px;
       height: 20px;
-      border: 2px solid currentColor;
+      border: 1px solid currentColor;
       border-radius: 2px;
       background: transparent;
     }
@@ -271,7 +448,7 @@
     .asset-shape-video {
       width: 28px;
       height: 20px;
-      border: 2px solid currentColor;
+      border: 1px solid currentColor;
       border-radius: 2px;
       background: transparent;
       position: relative;
@@ -576,6 +753,13 @@
       font-size: 1.1em;
     }
 
+    .generating-status .updated-hint {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
     .generating-status .stale-warning {
       display: block;
       margin-top: 6px;
@@ -604,23 +788,66 @@
 
     @keyframes pulse-border {
       0% {
-        border-left-color: var(--running);
+        border-color: var(--running);
         background: var(--accent-dim);
       }
 
       50% {
-        border-left-color: transparent;
+        border-color: transparent;
         background: transparent;
       }
 
       100% {
-        border-left-color: var(--running);
+        border-color: var(--running);
         background: var(--accent-dim);
       }
     }
 
     .blink-border {
       animation: pulse-border 2s infinite;
+    }
+
+    /* Story building in progress — inform user */
+    .story-building-info {
+      display: none;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-sm) var(--space-md);
+      margin-bottom: var(--space-md);
+      background: var(--accent-dim);
+      border: 1px solid var(--running);
+      color: var(--running);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .story-building-info.visible {
+      display: flex;
+    }
+    .story-building-info .spinner {
+      flex-shrink: 0;
+    }
+
+    .mute-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .mute-toggle:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .mute-toggle.muted {
+      border-color: var(--error);
+      color: var(--error);
     }
 
     /* --- CINEMA MODE / SCREENPLAY STYLING --- */
@@ -631,9 +858,8 @@
       border: 1px solid #333;
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
       color: #ddd;
-      max-width: 800px;
-      /* Standard script width approximation */
-      margin: 0 auto;
+      width: 100%;
+      min-width: 0;
     }
 
     .sp-slugline {
@@ -685,20 +911,211 @@
       padding-top: 0.5rem;
       font-family: "SF Mono", "Menlo", monospace;
       font-size: 0.8rem;
+      overflow-x: auto;
     }
 
     .shot-item {
       display: grid;
-      grid-template-columns: 24px 80px 1fr 80px;
+      grid-template-columns: 24px 1fr auto;
+      grid-template-rows: auto auto auto;
       gap: var(--space-sm);
       padding: 4px 0;
       align-items: start;
       border-bottom: 1px solid #222;
       color: #888;
     }
+    .shot-item .shot-icon { grid-column: 1; grid-row: 1; }
+    .shot-item .shot-meta:first-of-type { grid-column: 2; grid-row: 1; min-width: 0; word-break: break-word; }
+    .shot-item .shot-meta:last-of-type { grid-column: 3; grid-row: 1; }
+    .shot-item .shot-reason { grid-column: 1 / -1; grid-row: 2; min-width: 0; margin-top: 2px; text-transform: none; }
+    .shot-item .shot-prompt { grid-column: 1 / -1; grid-row: 3; min-width: 0; margin-top: 2px; }
 
     .shot-item:last-child {
       border-bottom: none;
+    }
+
+    /* Table layout for assets (Name | Workflow | Why | Metadata | Status | Output) — readable, scannable */
+    .assets-table {
+      width: 100%;
+      min-width: 720px;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+      table-layout: fixed;
+    }
+    .assets-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      vertical-align: top;
+      border-bottom: 2px solid var(--border);
+      color: var(--text-secondary);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+    }
+    .assets-table td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #2a2a2a;
+      vertical-align: top;
+      color: #ccc;
+    }
+    .assets-table td[title] {
+      cursor: help;
+    }
+    .assets-table tbody tr:nth-child(odd) {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .assets-table tbody tr:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .assets-table tr:last-child td {
+      border-bottom: none;
+    }
+    .assets-table .col-name {
+      width: 22%;
+      min-width: 140px;
+      max-width: 280px;
+      color: var(--accent);
+      font-weight: 600;
+      word-break: break-word;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-clamp: 2;
+      line-height: 1.4;
+    }
+    .assets-table .col-name .shot-icon {
+      flex-shrink: 0;
+    }
+    .assets-table .col-workflow {
+      width: 16%;
+      min-width: 140px;
+      max-width: 280px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+    }
+    .assets-table .col-workflow .workflow-id {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    }
+    .assets-table .col-why {
+      width: 22%;
+      min-width: 160px;
+      max-width: 320px;
+      font-style: italic;
+      color: #8a9;
+      font-size: 0.8rem;
+    }
+    .asset-cell-truncate {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-clamp: 2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      word-break: break-word;
+      line-height: 1.35;
+    }
+    .assets-table .col-meta {
+      width: 26%;
+      min-width: 180px;
+    }
+    .assets-table .col-meta .shot-prompt {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-clamp: 2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      word-break: break-word;
+      line-height: 1.35;
+      max-height: 2.8em;
+    }
+    .assets-table .col-status {
+      width: 90px;
+      min-width: 90px;
+      text-align: right;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+    .assets-table .col-output {
+      width: 130px;
+      min-width: 130px;
+      text-align: center;
+    }
+    .assets-table .col-output img,
+    .assets-table .col-output video {
+      border-radius: 4px;
+      border: 1px solid #333;
+    }
+
+    /* Expand/collapse column and row-expanded state for debugging */
+    .assets-table .col-expand {
+      width: 28px;
+      min-width: 28px;
+      max-width: 28px;
+      padding: 0.25rem 0.35rem;
+      text-align: center;
+      vertical-align: top;
+    }
+    .row-expand-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      line-height: 1;
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: inherit;
+    }
+    .row-expand-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--accent);
+    }
+    .assets-table tbody tr.row-expanded .col-name {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      max-width: none;
+      -webkit-line-clamp: unset;
+      line-clamp: unset;
+      word-break: break-word;
+    }
+    .assets-table tbody tr.row-expanded .col-workflow .workflow-id {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      word-break: break-word;
+    }
+    .assets-table tbody tr.row-expanded .col-why {
+      max-width: none;
+    }
+    .assets-table tbody tr.row-expanded .asset-cell-truncate {
+      display: block;
+      -webkit-line-clamp: unset;
+      line-clamp: unset;
+      overflow: visible;
+      max-height: none;
+    }
+    .assets-table tbody tr.row-expanded .col-meta .shot-prompt {
+      display: block;
+      -webkit-line-clamp: unset;
+      line-clamp: unset;
+      overflow: visible;
+      max-height: none;
     }
 
     .shot-prompt {
@@ -728,6 +1145,106 @@
     .toggle-shots-btn:hover {
       text-decoration: underline;
     }
+
+    /* DEBUG mode banner at top of story area */
+    .debug-banner {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: var(--space-md);
+      margin-bottom: var(--space-lg);
+      font-size: 0.9rem;
+      border-radius: 4px;
+    }
+    .debug-banner strong { margin-right: 0.5rem; }
+
+    /* Screenplay chapter title: clear "Chapter NN: Title" format, larger font */
+    .screenplay-chapter-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin: 2rem 0 1rem 0;
+      text-align: left;
+      text-transform: none;
+      letter-spacing: 0.02em;
+      color: var(--text-primary);
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+
+    /* Chapter block in screenplay (wrapper for title + scenes) */
+    .screenplay-chapter {
+      margin-bottom: 2rem;
+    }
+
+    /* Animation when this chapter is being worked on */
+    .screenplay-chapter.chapter-working {
+      position: relative;
+      border: 1px solid var(--running);
+      padding: var(--space-md);
+      animation: chapter-working-pulse 2s ease-in-out infinite;
+    }
+
+    .screenplay-chapter.chapter-working .screenplay-chapter-title {
+      color: var(--running);
+    }
+
+    .screenplay-chapter.chapter-working .chapter-working-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--running);
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    @keyframes chapter-working-pulse {
+      0%, 100% { opacity: 1; box-shadow: none; }
+      50% { opacity: 0.92; box-shadow: 0 0 0 1px rgba(0, 236, 255, 0.2); }
+    }
+
+    /* Scene block wrapper */
+    .screenplay-scene {
+      margin-top: 1rem;
+      padding-left: 0;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    /* Animation when this scene is being worked on (has pending/running assets) */
+    .screenplay-scene.scene-working {
+      position: relative;
+      border: 1px solid var(--running);
+      padding: var(--space-md);
+      background: rgba(0, 236, 255, 0.04);
+      border-radius: 2px;
+      animation: scene-working-pulse 2s ease-in-out infinite;
+    }
+
+    .screenplay-scene.scene-working .sp-slugline {
+      color: var(--running);
+    }
+
+    .screenplay-scene .scene-working-badge {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--running);
+      margin-left: 0.5rem;
+    }
+
+    .screenplay-scene.scene-working .scene-working-badge {
+      display: inline-flex;
+    }
+
+    @keyframes scene-working-pulse {
+      0%, 100% { opacity: 1; background-color: rgba(0, 236, 255, 0.04); }
+      50% { opacity: 0.98; background-color: rgba(0, 236, 255, 0.08); }
+    }
   </style>
 </head>
 
@@ -736,46 +1253,79 @@
   <header>
     <div class="header">
       <div class="title">MP STORY MONITOR</div>
-      <div class="meta" id="jobId">Job: ...</div>
-      <div class="meta" id="workflowName">Workflow: ...</div>
-      <div class="meta" id="lastUpdated">Updated: ...</div>
+      <div class="header-meta">
+        <button type="button" id="muteToggle" class="mute-toggle" title="Toggle notification sounds" aria-pressed="false">🔊 Sound on</button>
+        <div class="meta" id="jobId">Job: ...</div>
+        <div class="meta" id="workflowName">Workflow: ...</div>
+        <div class="meta" id="lastUpdated">Updated: ...</div>
+        <div class="meta" id="pipelinePid" style="display: none;" title="Pipeline process ID — use 'ps -p &lt;PID&gt;' to check if still running">PID: --</div>
+      </div>
     </div>
   </header>
 
-  <div class="dashboard">
-    <!-- Sidebar: Phases -->
-    <aside>
-      <div class="card">
-        <div class="card-title">Pipeline Status</div>
-        <div id="phasesList" class="phase-list">
-          <!-- Populated by JS -->
-          <div class="phase-item pending">Loading...</div>
+  <div class="dashboard" id="dashboard">
+    <!-- Sidebar: collapses to narrow left strip so main area expands; collapsed by default; auto-expand on error -->
+    <aside id="sidebarColumn" class="sidebar-column collapsed" aria-label="Pipeline status and system info">
+      <div class="sidebar-content">
+      <div id="sidebarPanelPipeline" class="card sidebar-panel collapsed" data-panel-id="pipeline">
+        <div class="sidebar-panel-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sidebarPanelPipelineBody" id="sidebarPanelPipelineHeader">
+          <span class="card-title">Pipeline Status</span>
+          <span class="sidebar-panel-chevron" aria-hidden="true">▼</span>
         </div>
-        <div id="lastUpdated" class="updated-bar"></div>
-        <div id="generatingStatus" class="generating-status"></div>
-      </div>
-
-      <div class="card" style="margin-top: var(--space-lg); border-color: var(--border);">
-        <div class="card-title">Output Folder</div>
-        <div
-          style="font-size: 0.8rem; word-break: break-all; color: var(--text-secondary); margin-bottom: var(--space-sm);">
-          <code id="outputPath" style="user-select: all; cursor: pointer;" title="Click to copy">--</code>
-        </div>
-        <button id="copyPathBtn"
-          style="background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 4px 8px; font-family: inherit; font-size: 0.75rem; cursor: pointer; text-transform: uppercase;">Copy
-          Path</button>
-      </div>
-
-      <div class="card" style="margin-top: var(--space-lg); border-color: var(--border);">
-        <div class="card-title">System Status</div>
-        <div style="font-size: 0.8rem; color: var(--text-secondary);">
-          Server: <span style="color: var(--success);">Online</span><br>
-          <br>
-          <div style="font-size: 0.7rem; opacity: 0.7;">
-            Refreshes every 2s<br>
-            Run: <code>python -m http.server</code> in story folder to view.
+        <div id="sidebarPanelPipelineBody" class="sidebar-panel-body">
+          <div id="phasesList" class="phase-list">
+            <!-- Populated by JS -->
+            <div class="phase-item pending">Loading...</div>
+          </div>
+          <div id="lastUpdated" class="updated-bar"></div>
+          <div id="generatingStatus" class="generating-status"></div>
+          <div id="storyBuildTime" class="updated-bar" style="display: none;"></div>
+          <div id="pipelineErrorCard" class="pipeline-error-card" style="display: none; margin-top: var(--space-md); padding: var(--space-md); border: 1px solid var(--error); border-radius: 0;">
+            <div style="color: var(--error); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: var(--space-sm);">
+              <span style="font-weight: 600;">Pipeline error</span>
+              <button id="copyErrorBtn" type="button" class="copy-error-btn" title="Copy error and traceback to clipboard">Copy error</button>
+            </div>
+            <div id="pipelineErrorSummary" class="pipeline-error-summary"></div>
+            <pre id="pipelineTraceback" class="pipeline-traceback"></pre>
           </div>
         </div>
+      </div>
+
+      <div id="sidebarPanelOutput" class="card sidebar-panel collapsed" data-panel-id="output">
+        <div class="sidebar-panel-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sidebarPanelOutputBody" id="sidebarPanelOutputHeader">
+          <span class="card-title">Output Folder</span>
+          <span class="sidebar-panel-chevron" aria-hidden="true">▼</span>
+        </div>
+        <div id="sidebarPanelOutputBody" class="sidebar-panel-body">
+          <div
+            style="font-size: 0.8rem; word-break: break-all; color: var(--text-secondary); margin-bottom: var(--space-sm);">
+            <code id="outputPath" style="user-select: all; cursor: pointer;" title="Click to copy">--</code>
+          </div>
+          <button id="copyPathBtn"
+            style="background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 4px 8px; font-family: inherit; font-size: 0.75rem; cursor: pointer; text-transform: uppercase;">Copy
+            Path</button>
+        </div>
+      </div>
+
+      <div id="sidebarPanelSystem" class="card sidebar-panel collapsed" data-panel-id="system">
+        <div class="sidebar-panel-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sidebarPanelSystemBody" id="sidebarPanelSystemHeader">
+          <span class="card-title">System Status</span>
+          <span class="sidebar-panel-chevron" aria-hidden="true">▼</span>
+        </div>
+        <div id="sidebarPanelSystemBody" class="sidebar-panel-body">
+          <div style="font-size: 0.8rem; color: var(--text-secondary);">
+            Server: <span id="connectionStatus" style="color: var(--success);">--</span><br>
+            <br>
+            <div style="font-size: 0.7rem; opacity: 0.7;">
+              Refreshes every 2s<br>
+              Run: <code>python -m http.server</code> in story folder to view.
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+      <div class="sidebar-toggle-strip">
+        <button type="button" id="sidebarToggleBtn" class="sidebar-toggle-btn" title="Expand sidebar (collapse to expand main area)" aria-label="Expand sidebar">▶</button>
       </div>
     </aside>
 
@@ -783,6 +1333,10 @@
     <main id="mainContent">
       <div class="card">
         <div class="card-title">Story Intelligence</div>
+        <div id="storyBuildingInfo" class="story-building-info" role="status" aria-live="polite">
+          <span class="spinner">◐</span>
+          <span id="storyBuildingInfoText">Story building in progress — chapters, scenes and assets are being generated. Page auto-refreshes every 2s.</span>
+        </div>
         <div id="storyBoard">
           <div style="padding: var(--space-lg); text-align: center; color: var(--text-secondary);">
             <span class="spinner">/</span> Waiting for data...
@@ -799,15 +1353,37 @@
       workflowName: document.getElementById("workflowName"),
       updated: document.getElementById("lastUpdated"),
       generatingStatus: document.getElementById("generatingStatus"),
+      storyBuildTime: document.getElementById("storyBuildTime"),
       storyBoard: document.getElementById("storyBoard"),
+      storyBuildingInfo: document.getElementById("storyBuildingInfo"),
       conn: document.getElementById("connectionStatus"),
       outPath: document.getElementById("outputPath"),
-      copyBtn: document.getElementById("copyPathBtn")
+      copyBtn: document.getElementById("copyPathBtn"),
+      pipelinePid: document.getElementById("pipelinePid"),
+      pipelineErrorCard: document.getElementById("pipelineErrorCard"),
+      pipelineErrorSummary: document.getElementById("pipelineErrorSummary"),
+      pipelineTraceback: document.getElementById("pipelineTraceback"),
+      copyErrorBtn: document.getElementById("copyErrorBtn")
     };
 
     function escapeHtml(s) {
       if (!s) return "";
       return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+    /** Escape for HTML attribute value (e.g. src). */
+    function escapeAttr(s) {
+      if (!s) return "";
+      return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#039;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    /** Format a param value for display. For dialogue_script, normalize literal \\n to line breaks so dialogue reads clearly. */
+    function formatParamValue(key, v) {
+      const val = (typeof v === "object") ? JSON.stringify(v) : String(v);
+      const isDialogue = key === "dialogue_script" || (typeof v === "string" && /\[S1\]|\[S2\]/.test(v));
+      const normalized = isDialogue ? val.replace(/\\n/g, "\n") : val;
+      const escaped = escapeHtml(normalized);
+      const withBreaks = isDialogue ? escaped.replace(/\n/g, "<br>") : escaped;
+      return { html: withBreaks, isBlock: isDialogue };
     }
 
     /** Returns HTML for the shape icon of an asset type (image, video, audio, text). */
@@ -840,6 +1416,66 @@
         }
       });
     }
+    if (els.copyErrorBtn) {
+      els.copyErrorBtn.addEventListener("click", () => {
+        const summary = els.pipelineErrorSummary ? els.pipelineErrorSummary.textContent : "";
+        const traceback = els.pipelineTraceback ? els.pipelineTraceback.textContent : "";
+        const text = [summary, traceback].filter(Boolean).join("\n\n");
+        if (text) {
+          navigator.clipboard.writeText(text).then(() => {
+            const originalText = els.copyErrorBtn.textContent;
+            els.copyErrorBtn.textContent = "Copied!";
+            setTimeout(() => els.copyErrorBtn.textContent = originalText, 2000);
+          });
+        }
+      });
+    }
+
+    // Collapsible sidebar panels: collapsed by default; auto-expand on error
+    const SIDEBAR_PANEL_IDS = ["pipeline", "output", "system"];
+    function getSidebarPanelEl(panelId) {
+      const id = "sidebarPanel" + panelId.charAt(0).toUpperCase() + panelId.slice(1);
+      return document.getElementById(id);
+    }
+    function setSidebarPanelExpanded(panelId, expanded) {
+      const el = getSidebarPanelEl(panelId);
+      if (!el) return;
+      el.classList.toggle("collapsed", !expanded);
+      el.classList.toggle("expanded", expanded);
+      const header = el.querySelector(".sidebar-panel-header");
+      if (header) header.setAttribute("aria-expanded", expanded ? "true" : "false");
+    }
+    function isSidebarPanelExpanded(panelId) {
+      const el = getSidebarPanelEl(panelId);
+      return el ? el.classList.contains("expanded") : false;
+    }
+    function expandSidebarPanel(panelId) {
+      setSidebarPanelExpanded(panelId, true);
+    }
+    function toggleSidebarPanel(panelId) {
+      const el = getSidebarPanelEl(panelId);
+      if (!el) return;
+      const expanded = el.classList.contains("expanded");
+      setSidebarPanelExpanded(panelId, !expanded);
+    }
+    (function initSidebarPanels() {
+      SIDEBAR_PANEL_IDS.forEach(function(panelId) {
+        const el = getSidebarPanelEl(panelId);
+        if (!el) return;
+        const header = el.querySelector(".sidebar-panel-header");
+        if (!header) return;
+        function doToggle() {
+          toggleSidebarPanel(panelId);
+        }
+        header.addEventListener("click", doToggle);
+        header.addEventListener("keydown", function(e) {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            doToggle();
+          }
+        });
+      });
+    })();
 
     function renderPhases(data) {
       if (!data || !data.phases) return;
@@ -847,11 +1483,22 @@
       els.jobId.textContent = data.job_id || "--";
       els.workflowName.textContent = data.workflow || "--";
 
-      // Show "Generating…" when any phase is running; "Stale?" if no update for 2+ min
+      // Show pipeline PID when present (debugging: ps -p <PID> to see if process is still running)
+      if (els.pipelinePid) {
+        if (data.pid != null && data.pid !== undefined) {
+          els.pipelinePid.textContent = "PID: " + data.pid;
+          els.pipelinePid.style.display = "";
+        } else {
+          els.pipelinePid.style.display = "none";
+        }
+      }
+
+      // Show "Generating…" when any phase is running; show "Last update: X ago" so user can tell if it's stuck
       const anyRunning = data.phases && Object.values(data.phases).some(v => v === "running");
       const updatedTs = data.updated_ts ? new Date(data.updated_ts).getTime() : 0;
       const secondsAgo = updatedTs ? Math.round((Date.now() - updatedTs) / 1000) : 0;
-      const stale = anyRunning && secondsAgo >= 120;
+      const stale = anyRunning && secondsAgo >= STALE_THRESHOLD_SEC;
+      const staleMinutes = secondsAgo >= 60 ? Math.floor(secondsAgo / 60) : 0;
       const timeStr = formatTimeAgo(data.updated_ts);
       if (els.updated) {
         els.updated.textContent = stale ? "⚠ Stuck? Last update: " + timeStr : "Last update: " + timeStr;
@@ -859,11 +1506,43 @@
       }
       if (els.generatingStatus) {
         if (anyRunning) {
+          // Why stuck: the pipeline writes _progress.json every ~30s via a background heartbeat. If the process exits or crashes, the heartbeat stops, so "Last update" freezes. A phase still showing RUNNING with no update for 2+ min usually means the run already exited — check the terminal.
+          const staleMsg = stale
+            ? (staleMinutes >= 60
+              ? "Pipeline likely exited — no update for " + staleMinutes + "m (heartbeat stops when the process exits). Re-run the pipeline and check the terminal for errors."
+              : "No update for " + (staleMinutes ? staleMinutes + "m" : secondsAgo + "s") + " — check terminal (process may have exited).")
+            : "";
+          const ageHint = "Last update: " + timeStr + " — " + (stale ? "check terminal" : "updates every ~30s when active");
           els.generatingStatus.innerHTML = '<span class="generating-line"><span class="spinner">◐</span> Generating…</span>' +
-            (stale ? '<span class="stale-warning">No update for ' + (secondsAgo >= 60 ? Math.floor(secondsAgo / 60) + 'm' : secondsAgo + 's') + ' — check terminal.</span>' : '');
+            '<span class="updated-hint">' + ageHint + '</span>' +
+            (staleMsg ? '<span class="stale-warning">' + staleMsg + '</span>' : '');
         } else {
           els.generatingStatus.innerHTML = '';
         }
+      }
+
+      // Show pipeline error / traceback when present (written by generator on exception)
+      const hasError = data.error || data.traceback;
+      const anyPhaseError = data.phases && Object.values(data.phases).some(function(s) {
+        const t = (String(s || "")).toLowerCase();
+        return t === "error" || t === "failed";
+      });
+      if (hasError || anyPhaseError) expandSidebarPanel("pipeline");
+      if (els.pipelineErrorCard) {
+        els.pipelineErrorCard.style.display = hasError ? "block" : "none";
+        if (hasError) {
+          if (els.pipelineErrorSummary) els.pipelineErrorSummary.textContent = data.error || "Pipeline failed.";
+          if (els.pipelineTraceback) {
+            els.pipelineTraceback.textContent = data.traceback || "";
+            els.pipelineTraceback.style.display = (data.traceback && data.traceback.trim()) ? "block" : "none";
+          }
+        }
+      }
+
+      // Show "Story building in progress" when director is running so user knows content is being generated
+      const directorRunning = data.phases && data.phases.director === "running";
+      if (els.storyBuildingInfo) {
+        els.storyBuildingInfo.classList.toggle("visible", !!directorRunning);
       }
 
       if (data.story_path && els.outPath) {
@@ -872,10 +1551,17 @@
       }
 
       const order = (data.phase_order && data.phase_order.length) ? data.phase_order : Object.keys(data.phases);
+      const phaseProgress = data.phase_progress || {};
 
       const html = order.map(key => {
         const status = data.phases[key] || "pending";
         const label = key.toUpperCase().replace(/_/g, " ");
+        const progress = phaseProgress[key];
+        const complete = progress && typeof progress.complete === "number" ? progress.complete : null;
+        const total = progress && typeof progress.total === "number" ? progress.total : null;
+        const progressText = (complete != null && total != null && total > 0)
+          ? (status === "running" ? `${complete}/${total} complete` : `${complete}/${total}`)
+          : "";
 
         let icon = "○";
         let iconClass = "phase-icon";
@@ -888,6 +1574,7 @@
         }
 
         const badgeClass = `status-badge ${status}`;
+        const statusLabel = progressText ? `${status} · ${progressText}` : status;
 
         // Add a pulsing effect to the running item
         const itemClass = `phase-item ${status} ${status === 'running' ? 'blink-border' : ''}`;
@@ -896,7 +1583,7 @@
                 <div class="${itemClass}">
                     <div class="${iconClass}">${icon}</div>
                     <div class="phase-name">${label}</div>
-                    <div class="${badgeClass}">${status}</div>
+                    <div class="${badgeClass}">${statusLabel}</div>
                 </div>
             `;
       }).join("");
@@ -904,14 +1591,205 @@
       els.phases.innerHTML = html;
     }
 
-    function renderStory(d) {
+    /** Build metadata cell HTML from asset params. Returns { html, title } for optional tooltip. */
+    function buildMetadataCell(params) {
+      if (!params || !Object.keys(params).length) return { html: "<span style=\"color:#555;\">(No parameters)</span>", title: "" };
+      const entries = Object.entries(params)
+        .filter(([_, v]) => v !== null && v !== "" && v !== undefined);
+      const html = entries.map(([k, v]) => {
+        const { html: valFormatted, isBlock } = formatParamValue(k, v);
+        const rowStyle = isBlock ? "display:block; margin-top:6px;" : "display:flex; gap:10px; margin-top:2px;";
+        const valueStyle = isBlock ? "color:#ccc; margin-top:4px; line-height:1.4; display:block;" : "color:#ccc;";
+        return `<div style="${rowStyle}"><span style="color:#666; min-width:80px;">${escapeHtml(k)}:</span><span style="${valueStyle}">${valFormatted}</span></div>`;
+      }).join("");
+      const title = entries.map(([k, v]) => k + ": " + (typeof v === "string" ? v : JSON.stringify(v))).join("\n");
+      return { html, title };
+    }
+
+    /** Build Output column cell HTML for an asset (image thumbnail, audio controls, or —). base is progress URL base (no trailing slash). */
+    function buildOutputCell(a, base) {
+      const r = a.result_path || a.resultPath;
+      if (!r) return "—";
+      const pathNorm = r.replace(/\\/g, "/");
+      const url = (base ? base.replace(/\/$/, "") + "/" : "") + pathNorm;
+      const type = (a.type || "").toLowerCase();
+      if (type === "image") return `<img src="${escapeAttr(url)}" alt="" style="max-width:120px; max-height:80px; object-fit:contain;" loading="lazy">`;
+      if (type === "audio") return `<audio controls src="${escapeAttr(url)}" style="max-width:200px;"></audio>`;
+      if (type === "video") return `<video controls src="${escapeAttr(url)}" style="max-width:160px; max-height:90px;"></video>`;
+      return escapeHtml(r);
+    }
+
+    /** Render a list of assets (story/chapter/scene) as a table: Name | Why | Metadata | Status | Output. */
+    function renderAssetsList(assets, listId, progressBaseUrl) {
+      if (!assets || !assets.length) return { html: "", badge: "" };
+      const base = progressBaseUrl || "";
+      let html = `<div class="shot-list" style="display:none;" id="${listId}">`;
+      html += `<table class="assets-table"><thead><tr><th class="col-expand" title="Expand/collapse row">⋮</th><th class="col-name">Name</th><th class="col-workflow">Workflow</th><th class="col-why">Why</th><th class="col-meta">Metadata</th><th class="col-status">Status</th><th class="col-output">Output</th></tr></thead><tbody>`;
+      html += assets.map((a, idx) => {
+        const name = a.asset_name || a.assetName || "(unnamed)";
+        const type = a.type || "unknown";
+        const workflow = a.workflow || "";
+        const status = a.status || "pending";
+        const params = a.params || {};
+        const skillReason = (a.skill_reason || "").replace(/\s+/g, " ").trim();
+        const { html: metaHtml, title: metaTitle } = buildMetadataCell(params);
+        const nameCell = `<div class="shot-icon" title="${escapeAttr(type)}" style="display:inline-block; vertical-align:middle; margin-right:6px;">${shapeHtml(type)}</div><span>${escapeHtml(name)}</span>`;
+        const nameTitle = name || "";
+        const workflowCell = workflow ? `<span class="workflow-id" title="${escapeAttr(workflow)}">${escapeHtml(workflow)}</span>` : "—";
+        const whyCell = skillReason
+          ? `<span class="asset-cell-truncate" title="${escapeAttr(skillReason)}">${escapeHtml(skillReason)}</span>`
+          : "—";
+        const whyTitleAttr = skillReason ? "" : ` title="No reason"`;
+        const outputCell = buildOutputCell(a, base);
+        const outputPathRaw = a.result_path || a.resultPath;
+        const outputTitle = outputPathRaw ? outputPathRaw.replace(/\\/g, "/") : "No output";
+        const metaTitleAttr = metaTitle ? ` title="${escapeAttr(metaTitle)}"` : "";
+        const nameTitleAttr = nameTitle ? ` title="${escapeAttr(nameTitle)}"` : "";
+        const workflowTitleAttr = workflow ? ` title="${escapeAttr(workflow)}"` : "";
+        const statusTitleAttr = ` title="${escapeAttr(status)}"`;
+        const outputTitleAttr = ` title="${escapeAttr(outputTitle)}"`;
+        const rowKey = escapeAttr(listId + ":" + idx);
+        const expandBtn = `<button type="button" class="row-expand-btn" onclick="toggleRowExpand(this)" title="Expand row (show full text)">+</button>`;
+        return `<tr data-row-key="${rowKey}"><td class="col-expand">${expandBtn}</td><td class="col-name"${nameTitleAttr}>${nameCell}</td><td class="col-workflow"${workflowTitleAttr}>${workflowCell}</td><td class="col-why"${whyTitleAttr}>${whyCell}</td><td class="col-meta"${metaTitleAttr}><div class="shot-prompt">${metaHtml}</div></td><td class="col-status"${statusTitleAttr}>${escapeHtml(status)}</td><td class="col-output"${outputTitleAttr}>${outputCell}</td></tr>`;
+      }).join("");
+      html += "</tbody></table></div>";
+      const assetTypeLabel = listId === "story-assets" ? "STORY" : listId.startsWith("chapter-assets") ? "CHAPTER" : "ASSETS";
+      const badge = `<button class="toggle-shots-btn" data-panel-id="${listId}" data-asset-count="${assets.length}" data-asset-type="${assetTypeLabel}" onclick="togglePanel('${listId}')">[ + ] SHOW ${assets.length} ${assetTypeLabel} ASSETS</button>`;
+      return { html, badge };
+    }
+
+    /** Find first chapter index that has any pending/running asset (for "working" animation). */
+    function getWorkingChapterIndex(chapters) {
+      if (!chapters || !chapters.length) return -1;
+      for (let ci = 0; ci < chapters.length; ci++) {
+        const scenes = chapters[ci].scenes || [];
+        for (const s of scenes) {
+          const assets = s.assets || [];
+          if (assets.some(a => { const s = (a.status || "").toLowerCase(); return s === "pending" || s === "running" || s === "generating"; }))
+            return ci;
+        }
+      }
+      return -1;
+    }
+
+    const EXPANDED_STORAGE_KEY = "progress_viewer_expanded";
+    function getStoredExpandedIds() {
+      try {
+        const raw = sessionStorage.getItem(EXPANDED_STORAGE_KEY);
+        if (!raw) return new Set();
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) ? new Set(arr) : new Set();
+      } catch (_) { return new Set(); }
+    }
+    function saveExpandedIds(ids) {
+      try { sessionStorage.setItem(EXPANDED_STORAGE_KEY, JSON.stringify([...ids])); } catch (_) {}
+    }
+
+    /** Expanded asset table rows (panelId:rowIndex) so auto-refresh doesn't collapse the row you're viewing. */
+    const EXPANDED_ROWS_STORAGE_KEY = "progress_viewer_expanded_rows";
+    function getStoredExpandedRows() {
+      try {
+        const raw = sessionStorage.getItem(EXPANDED_ROWS_STORAGE_KEY);
+        if (!raw) return new Set();
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) ? new Set(arr) : new Set();
+      } catch (_) { return new Set(); }
+    }
+    function saveExpandedRows(keys) {
+      try { sessionStorage.setItem(EXPANDED_ROWS_STORAGE_KEY, JSON.stringify([...keys])); } catch (_) {}
+    }
+    function captureExpandedRows() {
+      const keys = new Set();
+      if (els.storyBoard) {
+        els.storyBoard.querySelectorAll("tr.row-expanded[data-row-key]").forEach(tr => {
+          const k = tr.getAttribute("data-row-key");
+          if (k) keys.add(k);
+        });
+      }
+      return keys;
+    }
+    function restoreExpandedRows() {
+      getStoredExpandedRows().forEach(key => {
+        const tr = els.storyBoard && els.storyBoard.querySelector(`tr[data-row-key="${key}"]`);
+        if (!tr) return;
+        tr.classList.add("row-expanded");
+        const btn = tr.querySelector(".row-expand-btn");
+        if (btn) { btn.textContent = "−"; btn.title = "Collapse row"; }
+      });
+    }
+    /** Capture which asset panels are expanded (all .shot-list with id) for restore after re-render or page refresh. */
+    function captureExpandedShots() {
+      const expanded = new Set();
+      if (els.storyBoard) {
+        els.storyBoard.querySelectorAll(".shot-list[id]").forEach(el => {
+          if (el.id && window.getComputedStyle(el).display !== "none") expanded.add(el.id);
+        });
+      }
+      return expanded;
+    }
+    function restoreExpandedShots(expanded) {
+      const merged = new Set(expanded);
+      getStoredExpandedIds().forEach(id => merged.add(id));
+      merged.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = "block";
+      });
+      merged.forEach(id => updateToggleButtonLabel(id));
+    }
+    /** Update toggle button label to match panel visibility (SHOW vs HIDE). */
+    function updateToggleButtonLabel(panelId) {
+      const el = document.getElementById(panelId);
+      const btn = document.querySelector(`.toggle-shots-btn[data-panel-id="${panelId}"]`);
+      if (!btn || !el) return;
+      const isExpanded = el.style.display !== "none";
+      const count = btn.getAttribute("data-asset-count") || "0";
+      const type = btn.getAttribute("data-asset-type") || "ASSETS";
+      btn.textContent = isExpanded ? `[ − ] HIDE ${count} ${type} ASSETS` : `[ + ] SHOW ${count} ${type} ASSETS`;
+    }
+    /** Toggle a panel and persist expanded state so refresh doesn't collapse sections. */
+    function togglePanel(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.display = el.style.display === "none" ? "block" : "none";
+      updateToggleButtonLabel(id);
+      const expanded = captureExpandedShots();
+      saveExpandedIds(expanded);
+    }
+
+    /** Toggle row expand/collapse to show full truncated text for debugging. */
+    function toggleRowExpand(btn) {
+      const tr = btn && btn.closest ? btn.closest("tr") : null;
+      if (!tr) return;
+      const expanded = tr.classList.toggle("row-expanded");
+      btn.textContent = expanded ? "−" : "+";
+      btn.title = expanded ? "Collapse row" : "Expand row (show full text)";
+      const keys = captureExpandedRows();
+      saveExpandedRows(keys);
+    }
+
+    function renderStory(d, progressData, progressBaseUrl) {
+      const base = progressBaseUrl || "";
       if (!d || (!d.title && !d.chapters)) {
-        els.storyBoard.innerHTML = '<div style="padding:2rem;color:var(--text-secondary);">No story data available yet...</div>';
+        const directorRunning = progressData && progressData.phases && progressData.phases.director === "running";
+        const msg = directorRunning
+          ? 'Director working… Title and chapters will appear here as they’re generated.'
+          : 'No story data available yet...';
+        const debugBanner = (d && d.debug_mode)
+          ? `<div class="debug-banner"><strong>DEBUG is on.</strong> ${escapeHtml(d.debug_mode_note || "To turn off: set debug_mode to false in config.json, or set env MP_AUTO_GENERATE_DEBUG=0")}</div>`
+          : "";
+        els.storyBoard.innerHTML = debugBanner + `<div style="padding:2rem;color:var(--text-secondary);">${msg}</div>`;
         return;
       }
 
+      const expandedShots = captureExpandedShots();
+      saveExpandedIds(expandedShots);
+      const expandedRows = captureExpandedRows();
+      saveExpandedRows(expandedRows);
+
       const title = escapeHtml(d.title || "Untitled Story");
       const logline = escapeHtml(d.logline || "No logline generated yet.");
+      const directorRunning = progressData && progressData.phases && progressData.phases.director === "running";
+      const workingChapterIndex = getWorkingChapterIndex(d.chapters);
 
       // Assets Summary
       const assets = d.assets_by_type || {};
@@ -923,10 +1801,27 @@
             </div>
         `).join("");
 
-      // Chapters rendered as Screenplay
+      // Story-level assets section
+      const storyAssets = d.story_assets || [];
+      const storyAssetsRendered = renderAssetsList(storyAssets, "story-assets", base);
+      const storyAssetsSection = storyAssets.length > 0
+        ? `<div class="card-title" style="margin-top:1rem;">Story assets</div><div style="margin-bottom:1rem;">${storyAssetsRendered.badge}${storyAssetsRendered.html}</div>`
+        : "";
+
+      // Chapters rendered as Screenplay (with chapter assets before scenes)
+      // Strip leading "Chapter N" from API title so we don't show "Chapter 03: Chapter 2 - The Invitation"
+      const stripChapterPrefix = (t) => (t || "").replace(/^Chapter\s*\d+\s*[-:]\s*/i, "").trim() || t;
       const chaptersHtml = (d.chapters || []).map((c, i) => {
-        const cTitle = escapeHtml(c.title || `Chapter ${i + 1}`);
+        const chapterNum = String(i + 1).padStart(2, "0");
+        const rawTitle = c.title || `Chapter ${i + 1}`;
+        const cTitle = escapeHtml(stripChapterPrefix(rawTitle) || rawTitle);
+        const isWorking = directorRunning && workingChapterIndex === i;
         const scenes = c.scenes || [];
+        const chapterAssets = c.assets || [];
+        const chapterAssetsRendered = renderAssetsList(chapterAssets, "chapter-assets-" + i, base);
+        const chapterAssetsSection = chapterAssets.length > 0
+          ? `<div class="card-title" style="margin:1rem 0 0.5rem 0; font-size:0.9rem;">Chapter assets</div><div style="margin-bottom:1rem;">${chapterAssetsRendered.badge}${chapterAssetsRendered.html}</div>`
+          : "";
 
         const scenesHtml = scenes.map((s, si) => {
           const sName = escapeHtml(s.name || `Scene ${si + 1}`);
@@ -938,78 +1833,90 @@
           // For now, treat summary as Action Block
 
           const assetsList = s.assets || [];
+          const hasPendingOrRunning = assetsList.some(a => {
+            const st = (a.status || "").toLowerCase();
+            return st === "pending" || st === "running" || st === "generating";
+          });
+          const sceneWorking = directorRunning && hasPendingOrRunning;
           let shotsHtml = "";
 
           if (assetsList.length > 0) {
-            shotsHtml = `<div class="shot-list" style="display:none;" id="shots-${i}-${si}">`;
-            shotsHtml += assetsList.map(a => {
+            const panelId = "shots-" + i + "-" + si;
+            shotsHtml = `<div class="shot-list" style="display:none;" id="${panelId}">`;
+            shotsHtml += `<table class="assets-table"><thead><tr><th class="col-expand" title="Expand/collapse row">⋮</th><th class="col-name">Name</th><th class="col-workflow">Workflow</th><th class="col-why">Why</th><th class="col-meta">Metadata</th><th class="col-status">Status</th><th class="col-output">Output</th></tr></thead><tbody>`;
+            shotsHtml += assetsList.map((a, ai) => {
               const name = a.asset_name || a.assetName || "(unnamed)";
               const type = a.type || "unknown";
               const workflow = a.workflow || "";
               const status = a.status || "pending";
               const params = a.params || {};
-
-              // Format params as a clean list, excluding empty/null; truncate long prompt for display
-              const paramRows = Object.entries(params)
-                .filter(([_, v]) => v !== null && v !== "" && v !== undefined)
-                .map(([k, v]) => {
-                  let val = (typeof v === 'object') ? JSON.stringify(v) : String(v);
-                  if (k === 'prompt' && val.length > 120) val = val.slice(0, 117) + '...';
-                  const valFormatted = escapeHtml(val);
-                  return `<div style="display:flex; gap:10px; margin-top:2px;">
-                                     <span style="color:#666; min-width:80px; text-align:right;">${escapeHtml(k)}:</span>
-                                     <span style="color:#ccc; flex:1;">${valFormatted}</span>
-                                   </div>`;
-                }).join("");
-
-              return `
-                    <div class="shot-item">
-                        <div class="shot-icon" title="${type}">${shapeHtml(type)}</div>
-                        <div class="shot-meta" style="color:var(--accent); font-weight:bold;">${escapeHtml(name)} · ${escapeHtml(workflow)}</div>
-                        <div class="shot-prompt">
-                            ${paramRows || '<span style="color:#555;">(No parameters)</span>'}
-                        </div>
-                        <div class="shot-meta" style="text-align:right;">${escapeHtml(status)}</div>
-                    </div>
-                   `;
+              const skillReason = (a.skill_reason || "").replace(/\s+/g, " ").trim();
+              const { html: metaHtml, title: metaTitle } = buildMetadataCell(params);
+              const nameCell = `<div class="shot-icon" title="${escapeAttr(type)}" style="display:inline-block; vertical-align:middle; margin-right:6px;">${shapeHtml(type)}</div><span>${escapeHtml(name)}</span>`;
+              const nameTitle = name || "";
+              const workflowCell = workflow ? `<span class="workflow-id" title="${escapeAttr(workflow)}">${escapeHtml(workflow)}</span>` : "—";
+              const whyCell = skillReason
+                ? `<span class="asset-cell-truncate" title="${escapeAttr(skillReason)}">${escapeHtml(skillReason)}</span>`
+                : "—";
+              const whyTitleAttr = skillReason ? "" : ` title="No reason"`;
+              const outputCell = buildOutputCell(a, base);
+              const outputPathRaw = a.result_path || a.resultPath;
+              const outputTitle = outputPathRaw ? outputPathRaw.replace(/\\/g, "/") : "No output";
+              const metaTitleShort = metaTitle.length > 400 ? metaTitle.slice(0, 400) + "…" : metaTitle;
+              const metaTitleAttr = metaTitle ? ` title="${escapeAttr(metaTitleShort)}"` : "";
+              const nameTitleAttr = nameTitle ? ` title="${escapeAttr(nameTitle)}"` : "";
+              const workflowTitleAttr = workflow ? ` title="${escapeAttr(workflow)}"` : "";
+              const statusTitleAttr = ` title="${escapeAttr(status)}"`;
+              const outputTitleAttr = ` title="${escapeAttr(outputTitle)}"`;
+              const rowKey = escapeAttr(panelId + ":" + ai);
+              const expandBtn = `<button type="button" class="row-expand-btn" onclick="toggleRowExpand(this)" title="Expand row (show full text)">+</button>`;
+              return `<tr data-row-key="${rowKey}"><td class="col-expand">${expandBtn}</td><td class="col-name"${nameTitleAttr}>${nameCell}</td><td class="col-workflow"${workflowTitleAttr}>${workflowCell}</td><td class="col-why"${whyTitleAttr}>${whyCell}</td><td class="col-meta"${metaTitleAttr}><div class="shot-prompt">${metaHtml}</div></td><td class="col-status"${statusTitleAttr}>${escapeHtml(status)}</td><td class="col-output"${outputTitleAttr}>${outputCell}</td></tr>`;
             }).join("");
-            shotsHtml += `</div>`;
+            shotsHtml += "</tbody></table></div>";
           }
 
           const assetCountBadge = assetsList.length > 0
-            ? `<button class="toggle-shots-btn" onclick="document.getElementById('shots-${i}-${si}').style.display = document.getElementById('shots-${i}-${si}').style.display === 'none' ? 'block' : 'none'">
-                     [ + ] SHOW ${assetsList.length} ASSETS
-                   </button>`
+            ? `<button class="toggle-shots-btn" data-panel-id="shots-${i}-${si}" data-asset-count="${assetsList.length}" data-asset-type="SCENE" onclick="togglePanel('shots-${i}-${si}')">[ + ] SHOW ${assetsList.length} SCENE ASSETS</button>`
             : "";
 
           return `
-             <div class="sp-slugline">${sName.toUpperCase()}</div>
-             <div class="sp-action">${sSummary}</div>
-             <!-- Asset Badges for this scene -->
-             <div style="display:flex; flex-direction:column; align-items:flex-end; margin-bottom:1rem;">
-                <div style="display:flex; gap:8px; opacity:0.7;">
-                    ${Object.entries(sAssets).map(([k, v]) => v > 0 ? `<span class="mini-badge has-assets" style="border-style:dashed;">${k}:${v}</span>` : '').join('')}
-                </div>
-                ${assetCountBadge}
-                ${shotsHtml}
+             <div class="screenplay-scene ${sceneWorking ? "scene-working" : ""}">
+               <div class="sp-slugline">${sName.toUpperCase()}${sceneWorking ? '<span class="scene-working-badge"><span class="spinner">◐</span> Generating…</span>' : ""}</div>
+               <div class="sp-action">${sSummary}</div>
+               <div style="display:flex; flex-direction:column; align-items:flex-end; margin-bottom:1rem;">
+                  <div style="display:flex; gap:8px; opacity:0.7;">
+                      ${Object.entries(sAssets).map(([k, v]) => v > 0 ? `<span class="mini-badge has-assets" style="border-style:dashed;">${k}:${v}</span>` : '').join('')}
+                  </div>
+                  ${assetCountBadge}
+                  ${shotsHtml}
+               </div>
              </div>
            `;
         }).join("");
 
         return `
-            <div style="margin-bottom: 2rem;">
-                <div style="text-align:center; text-transform:uppercase; text-decoration:underline; font-weight:bold; margin: 2rem 0 1rem 0;">${cTitle}</div>
+            <div class="screenplay-chapter ${isWorking ? "chapter-working" : ""}">
+                <div class="screenplay-chapter-title">
+                    Chapter ${chapterNum}: ${cTitle}
+                    ${isWorking ? '<span class="chapter-working-badge"><span class="spinner">◐</span> Generating…</span>' : ""}
+                </div>
+                ${chapterAssetsSection}
                 ${scenesHtml}
             </div>
         `;
       }).join("");
 
+      const debugBannerHtml = (d.debug_mode)
+        ? `<div class="debug-banner"><strong>DEBUG is on.</strong> ${escapeHtml(d.debug_mode_note || "To turn off: set debug_mode to false in config.json, or set env MP_AUTO_GENERATE_DEBUG=0")}</div>`
+        : "";
+
       els.storyBoard.innerHTML = `
+            ${debugBannerHtml}
             <div class="story-title-large" style="text-align:center; margin-bottom:0.5rem;">${title}</div>
             <div class="logline" style="text-align:center; border:none; font-style:normal; font-family:'Courier New'; margin-bottom: 2rem;">
                 "${logline}"
             </div>
-            
+            ${storyAssetsSection}
             <div class="asset-grid">
                 ${assetHtml}
             </div>
@@ -1019,17 +1926,203 @@
                 ${chaptersHtml || '<div style="text-align:center; padding:2rem; color:#666;">(SCENES NOT YET WRITTEN)</div>'}
             </div>
         `;
+      restoreExpandedShots(expandedShots);
+      restoreExpandedRows();
     }
 
+    const fetchOpts = { cache: "no-store" };
+    // Base URL for progress API: when page is not served from progress server (e.g. embedded in IDE), relative fetches fail; use explicit origin.
+    const PROGRESS_PORT = "8081";
+    const STALE_THRESHOLD_SEC = 120; // 2 minutes — no update for this long is usually a sign to investigate; shows warning and error sound
+
+    /**
+     * Sound rules (page polls every 2s):
+     * 1. Story-finish sound: once when director phase goes running → done.
+     * 2. Progress sound: when phases change OR when director content changes. Not on heartbeat.
+     * 3. Error sound: once when connection lost, first time stale, or phase error/failed.
+     */
+    const MUTE_STORAGE_KEY = "progress_viewer_mute";
+    function isMuted() {
+      try { return localStorage.getItem(MUTE_STORAGE_KEY) === "1"; } catch (_) { return false; }
+    }
+    function setMuted(muted) {
+      try { localStorage.setItem(MUTE_STORAGE_KEY, muted ? "1" : "0"); } catch (_) {}
+    }
+
+    /** Play story-progress sound when new chapters/scenes/assets or phase progress is detected. */
+    function playProgressSound() {
+      if (isMuted()) return;
+      try {
+        const audio = new Audio("notification-story-progress.mp3");
+        audio.volume = 0.6;
+        audio.play().catch(function() {});
+      } catch (_) {}
+    }
+
+    /** Play story-finish sound when story build (director phase) completes. */
+    function playStoryFinishSound() {
+      if (isMuted()) return;
+      try {
+        const audio = new Audio("notification-story-finish.mp3");
+        audio.volume = 0.6;
+        audio.play().catch(function() {});
+      } catch (_) {}
+    }
+
+    /** Play error sound when connection is broken, no update for long time, or a phase has failed. */
+    function playErrorSound() {
+      if (isMuted()) return;
+      try {
+        const audio = new Audio("notification-error.mp3");
+        audio.volume = 0.6;
+        audio.play().catch(function() {});
+      } catch (_) {}
+    }
+
+    function updateMuteButton() {
+      const btn = document.getElementById("muteToggle");
+      if (!btn) return;
+      const muted = isMuted();
+      btn.textContent = muted ? "🔇 Muted" : "🔊 Sound on";
+      btn.setAttribute("aria-pressed", muted ? "true" : "false");
+      btn.classList.toggle("muted", muted);
+    }
+    (function initMuteToggle() {
+      updateMuteButton();
+      const btn = document.getElementById("muteToggle");
+      if (btn) {
+        btn.addEventListener("click", function() {
+          setMuted(!isMuted());
+          updateMuteButton();
+        });
+      }
+    })();
+
+    /** Fingerprint of progress state (full: phases + updated_ts). */
+    let lastProgressFingerprint = null;
+    /** Phase-only fingerprint so we don't play progress sound on heartbeat (updated_ts every 30s). */
+    let lastPhaseFingerprint = null;
+    /** Fingerprint of director/story content: new chapters, scenes, scene details, or assets trigger sound. */
+    let lastDirectorFingerprint = null;
+    /** Previous director phase status to detect transition to "done" (story build finished). */
+    let lastDirectorPhaseStatus = null;
+    /** When we first saw director "running" (ms), for story-build duration. */
+    let lastDirectorStartedAt = null;
+    /** Computed story build duration in ms (director running → done); shown until page reload. */
+    let storyBuildDurationMs = null;
+    /** Previous connection status for error sound when connection is lost. */
+    let lastConnectionStatus = null;
+    /** Previous stale state so we play error sound only when first becoming stale. */
+    let lastStale = false;
+    /** Whether any phase was in error/failed last poll (for generation-failed sound). */
+    let lastPhaseHadError = false;
+
+    /** Build a fingerprint of director content so we can play sound when new chapters, scenes, details, or assets appear. */
+    function directorContentFingerprint(d) {
+      if (!d || (!d.title && !(d.chapters && d.chapters.length))) return null;
+      const chapters = (d.chapters || []).map(function(c) {
+        const scenes = (c.scenes || []).map(function(s) {
+          const assets = (s.assets || []).map(function(a) {
+            return (a.asset_name || a.assetName || "").trim() + "|" + (a.status || "");
+          }).sort();
+          return { name: s.name || "", summaryLen: (s.summary || "").length, assets: assets };
+        });
+        const cAssets = (c.assets || []).map(function(a) {
+          return (a.asset_name || a.assetName || "").trim() + "|" + (a.status || "");
+        }).sort();
+        return { title: c.title || "", scenes: scenes, assets: cAssets };
+      });
+      const storyAssets = (d.story_assets || []).map(function(a) {
+        return (a.asset_name || a.assetName || "").trim() + "|" + (a.status || "");
+      }).sort();
+      return JSON.stringify({
+        title: d.title || "",
+        loglineLen: (d.logline || "").length,
+        storyAssets: storyAssets,
+        chapters: chapters
+      });
+    }
+
+    /** Format milliseconds as "Xm Ys", "Xs", or "Xh Ym Zs". */
+    function formatDuration(ms) {
+      if (ms == null || ms < 0) return "";
+      const s = Math.floor(ms / 1000);
+      if (s < 60) return s + "s";
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      if (m < 60) return sec > 0 ? m + "m " + sec + "s" : m + "m";
+      const h = Math.floor(m / 60);
+      const min = m % 60;
+      return (min > 0 || sec > 0) ? h + "h " + min + "m " + sec + "s" : h + "h";
+    }
+
+    const progressBase = (function() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("progressBase")) return params.get("progressBase").replace(/\/$/, "");
+      // Use same-origin (relative) whenever the viewer is served from the progress port so API and asset URLs (images/video/audio) load from the same host (works in production e.g. https://server:8081).
+      if (window.location.port === PROGRESS_PORT) return "";
+      return "http://127.0.0.1:" + PROGRESS_PORT;
+    })();
+    // #region agent log
+    const DEBUG_INGEST = "http://127.0.0.1:7247/ingest/ca26efc6-4865-45e1-a109-8ee75418b9c5";
+    function agentLog(location, message, data, hypothesisId) {
+      fetch(DEBUG_INGEST, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location, message, data: data || {}, hypothesisId, timestamp: Date.now() }) }).catch(function() {});
+    }
+    // #endregion
+
+    function cacheBuster() { return "_=" + Date.now(); }
     async function poll() {
       try {
-        // Fetch main status
-        const r1 = await fetch("./_progress.json");
+        const progressUrl = progressBase + "/_progress.json?" + cacheBuster();
+        const r1 = await fetch(progressUrl, fetchOpts);
         if (r1.ok) {
           const data = await r1.json();
+          const directorStatus = data.phases && data.phases.director;
+          if (directorStatus === "running" && lastDirectorStartedAt === null) {
+            lastDirectorStartedAt = Date.now();
+          }
+          const storyJustFinished = lastDirectorPhaseStatus === "running" && directorStatus === "done";
+          if (storyJustFinished) {
+            playStoryFinishSound();
+            if (lastDirectorStartedAt !== null) {
+              storyBuildDurationMs = Date.now() - lastDirectorStartedAt;
+              lastDirectorStartedAt = null;
+            }
+          }
+          lastDirectorPhaseStatus = directorStatus || null;
+          const phaseFingerprint = JSON.stringify(data.phases);
+          const fullFingerprint = JSON.stringify({ phases: data.phases, updated_ts: data.updated_ts });
+          if (!storyJustFinished && lastProgressFingerprint !== null && phaseFingerprint !== lastPhaseFingerprint) {
+            playProgressSound();
+          }
+          lastProgressFingerprint = fullFingerprint;
+          lastPhaseFingerprint = phaseFingerprint;
+          // Error cues: no update for long time (stale), or any phase failed/error
+          const anyRunning = data.phases && Object.values(data.phases).some(function(v) { return v === "running"; });
+          const updatedTs = data.updated_ts ? new Date(data.updated_ts).getTime() : 0;
+          const secondsAgo = updatedTs ? Math.round((Date.now() - updatedTs) / 1000) : 0;
+          const stale = anyRunning && secondsAgo >= STALE_THRESHOLD_SEC;
+          const anyPhaseError = data.phases && Object.values(data.phases).some(function(s) {
+            const t = (s || "").toLowerCase();
+            return t === "error" || t === "failed";
+          });
+          if (lastStale === false && stale === true) playErrorSound();
+          if (lastPhaseHadError === false && anyPhaseError === true) playErrorSound();
+          lastStale = stale;
+          lastPhaseHadError = !!anyPhaseError;
+          lastConnectionStatus = "CONNECTED";
+          // #region agent log
+          agentLog("progress_viewer.html:poll", "progress_ok", { phases: data.phases, directorVal: data.phases && data.phases.director, hasDirectorKey: !!(data.phases && "director" in data.phases) }, "H1");
+          // #endregion
           renderPhases(data);
-          els.conn.textContent = "CONNECTED";
-          els.conn.style.color = "var(--success)";
+          if (els.conn) { els.conn.textContent = "CONNECTED"; els.conn.style.color = "var(--success)"; }
+          if (storyBuildDurationMs !== null) {
+            const el = document.getElementById("storyBuildTime");
+            if (el) {
+              el.textContent = "Story build time: " + formatDuration(storyBuildDurationMs);
+              el.style.display = "block";
+            }
+          }
 
           // Show "generating" animation on main card when any phase is running
           const mainCard = document.querySelector("#mainContent .card");
@@ -1040,21 +2133,43 @@
 
           // Fetch details if available
           if (data.phases && (data.phases.director === "running" || data.phases.director === "done")) {
+            let directorRendered = false;
             try {
-              const r2 = await fetch("./_director_progress.json");
+              const directorUrl = progressBase + "/_director_progress.json?" + cacheBuster();
+              const r2 = await fetch(directorUrl, fetchOpts);
+              // #region agent log
+              agentLog("progress_viewer.html:poll", "director_fetch", { status: r2.status, ok: r2.ok }, "H2,H5");
+              // #endregion
               if (r2.ok) {
                 const dData = await r2.json();
-                renderStory(dData);
+                const directorFp = directorContentFingerprint(dData);
+                if (directorFp !== null && lastDirectorFingerprint !== null && directorFp !== lastDirectorFingerprint) {
+                  playProgressSound();
+                }
+                if (directorFp !== null) lastDirectorFingerprint = directorFp;
+                renderStory(dData, data, progressBase);
+                directorRendered = true;
               }
-            } catch (e) { console.log("No director data yet"); }
+            } catch (e) { console.log("No director data yet", e); }
+            if (!directorRendered) {
+              els.storyBoard.innerHTML = '<div style="padding:2rem;color:var(--text-secondary);">Director running… Story skeleton will appear here when ready. (If this persists, refresh the page.)</div>';
+            }
+          } else {
+            // #region agent log
+            agentLog("progress_viewer.html:poll", "director_branch_skipped", { directorBranch: false, phases: data.phases }, "H1");
+            // #endregion
           }
         } else {
-          els.conn.textContent = "OFFLINE";
-          els.conn.style.color = "var(--error)";
+          if (lastConnectionStatus === "CONNECTED") playErrorSound();
+          lastConnectionStatus = "OFFLINE";
+          expandSidebarPanel("system");
+          if (els.conn) { els.conn.textContent = "OFFLINE"; els.conn.style.color = "var(--error)"; }
         }
       } catch (e) {
-        els.conn.textContent = "ERROR";
-        els.conn.style.color = "var(--error)";
+        if (lastConnectionStatus === "CONNECTED") playErrorSound();
+        lastConnectionStatus = "ERROR";
+        expandSidebarPanel("system");
+        if (els.conn) { els.conn.textContent = "ERROR"; els.conn.style.color = "var(--error)"; }
       }
     }
 

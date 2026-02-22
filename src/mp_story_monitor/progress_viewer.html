@@ -56,7 +56,7 @@
       line-height: 1.5;
     }
 
-    /* Layout Grid */
+    /* Layout Grid: sidebar collapses to narrow strip so main area expands */
     .dashboard {
       display: grid;
       grid-template-columns: 300px 1fr;
@@ -64,22 +64,90 @@
       max-width: 1400px;
       margin: 0 auto;
       width: 100%;
+      transition: grid-template-columns 0.2s ease;
+    }
+    .dashboard.sidebar-collapsed {
+      grid-template-columns: 48px 1fr;
+    }
+
+    .sidebar-column {
+      display: flex;
+      flex-direction: row;
+      min-width: 0;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      transition: width 0.2s ease;
+    }
+    .sidebar-column .sidebar-content {
+      flex: 1;
+      min-width: 0;
+      overflow: auto;
+      padding: var(--space-md);
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .sidebar-column.collapsed .sidebar-content {
+      display: none;
+    }
+    .sidebar-toggle-strip {
+      width: 48px;
+      min-width: 48px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-left: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .sidebar-column.collapsed .sidebar-toggle-strip {
+      border-left: none;
+      border-right: 1px solid var(--border);
+    }
+    .sidebar-toggle-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-family: inherit;
+      padding: 0;
+    }
+    .sidebar-toggle-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
     }
 
     @media (max-width: 900px) {
       .dashboard {
         grid-template-columns: 1fr;
       }
+      .dashboard.sidebar-collapsed {
+        grid-template-columns: 1fr;
+      }
+      .sidebar-column.collapsed .sidebar-content {
+        display: none;
+      }
     }
 
-    /* Header */
+    /* Header: sticky so pipeline status stays visible when scrolling the table */
     header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--bg);
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      gap: var(--space-md);
       border-bottom: 1px solid var(--border);
       padding-bottom: var(--space-md);
       margin-bottom: var(--space-md);
+      box-shadow: 0 1px 0 var(--border);
     }
 
     .header {
@@ -110,6 +178,54 @@
 
     .header .header-meta .meta {
       margin: 0;
+    }
+
+    /* Pipeline status in header: horizontal phase list + generating/update info */
+    .header-pipeline {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-md);
+      width: 100%;
+      min-height: 2.5rem;
+      padding: var(--space-sm) 0;
+      border-top: 1px solid var(--border);
+      margin-top: 2px;
+    }
+    .header-pipeline .pipeline-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      margin-right: var(--space-sm);
+      flex-shrink: 0;
+    }
+    .header-pipeline .phase-list-inline {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0;
+      align-items: center;
+    }
+    .header-pipeline .phase-item {
+      padding: var(--space-sm) var(--space-md);
+      margin-right: 2px;
+    }
+    .header-pipeline .phase-item .phase-name {
+      margin-right: 0.35rem;
+    }
+    .header-pipeline .generating-status {
+      margin-top: 0;
+      margin-left: var(--space-sm);
+    }
+    .header-pipeline .updated-bar {
+      margin-top: 0;
+      margin-left: auto;
+      font-size: 0.75rem;
+    }
+    .header-pipeline .pipeline-error-card {
+      width: 100%;
+      margin-top: var(--space-sm);
     }
 
     h1 {
@@ -155,6 +271,14 @@
       margin: 0 0 var(--space-md) 0;
       border-bottom: 1px solid var(--border);
       padding-bottom: var(--space-sm);
+    }
+
+    /* Sidebar content sections (no per-panel collapse; only whole sidebar collapses to left) */
+    .sidebar-content .card {
+      margin-bottom: var(--space-lg);
+    }
+    .sidebar-content .card:last-child {
+      margin-bottom: 0;
     }
 
     /* Phases Stepper */
@@ -797,6 +921,7 @@
       padding-top: 0.5rem;
       font-family: "SF Mono", "Menlo", monospace;
       font-size: 0.8rem;
+      overflow-x: auto;
     }
 
     .shot-item {
@@ -819,11 +944,12 @@
       border-bottom: none;
     }
 
-    /* Table layout for assets (Name | Why | Metadata | Status | Output) — readable, scannable */
+    /* Table layout for assets (Name | Workflow | Why | Metadata | Status | Output). Column widths sum to 100% so table fills container; min-width triggers horizontal scroll when narrow. */
     .assets-table {
       width: 100%;
+      min-width: 900px;
       border-collapse: collapse;
-      font-size: 0.85rem;
+      font-size: 0.875rem;
       margin-top: 0.5rem;
       table-layout: fixed;
     }
@@ -844,6 +970,9 @@
       vertical-align: top;
       color: #ccc;
     }
+    .assets-table td[title] {
+      cursor: help;
+    }
     .assets-table tbody tr:nth-child(odd) {
       background: rgba(255, 255, 255, 0.02);
     }
@@ -853,21 +982,48 @@
     .assets-table tr:last-child td {
       border-bottom: none;
     }
+    /* NAME column: align header with name text (after icon); avoid premature wrap by clamping only the text */
+    .assets-table th.col-name {
+      padding-left: 2.25rem; /* align "Name" with name text, not the icon */
+    }
     .assets-table .col-name {
       width: 20%;
-      max-width: 200px;
       color: var(--accent);
       font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
     .assets-table .col-name .shot-icon {
       flex-shrink: 0;
     }
+    .assets-table .col-name > span {
+      flex: 1 1 0;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-clamp: 2;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .assets-table .col-workflow {
+      width: 14%;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+    }
+    .assets-table .col-workflow .workflow-id {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    }
     .assets-table .col-why {
-      width: 24%;
-      max-width: 260px;
+      width: 20%;
       font-style: italic;
       color: #8a9;
       font-size: 0.8rem;
@@ -883,8 +1039,7 @@
       line-height: 1.35;
     }
     .assets-table .col-meta {
-      width: 28%;
-      min-width: 0;
+      width: 25%;
     }
     .assets-table .col-meta .shot-prompt {
       display: -webkit-box;
@@ -898,8 +1053,8 @@
       max-height: 2.8em;
     }
     .assets-table .col-status {
-      width: 90px;
-      min-width: 90px;
+      width: 8%;
+      min-width: 4.5rem;
       text-align: right;
       font-size: 0.75rem;
       font-weight: 600;
@@ -907,8 +1062,8 @@
       color: var(--text-secondary);
     }
     .assets-table .col-output {
-      width: 130px;
-      min-width: 130px;
+      width: 10%;
+      min-width: 6rem;
       text-align: center;
     }
     .assets-table .col-output img,
@@ -919,9 +1074,9 @@
 
     /* Expand/collapse column and row-expanded state for debugging */
     .assets-table .col-expand {
-      width: 28px;
-      min-width: 28px;
-      max-width: 28px;
+      width: 3%;
+      min-width: 2rem;
+      max-width: 2.5rem;
       padding: 0.25rem 0.35rem;
       text-align: center;
       vertical-align: top;
@@ -949,6 +1104,18 @@
       overflow: visible;
       text-overflow: clip;
       max-width: none;
+      word-break: break-word;
+    }
+    .assets-table tbody tr.row-expanded .col-name > span {
+      overflow: visible;
+      text-overflow: clip;
+      -webkit-line-clamp: unset;
+      line-clamp: unset;
+    }
+    .assets-table tbody tr.row-expanded .col-workflow .workflow-id {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
       word-break: break-word;
     }
     .assets-table tbody tr.row-expanded .col-why {
@@ -1108,47 +1275,43 @@
         <button type="button" id="muteToggle" class="mute-toggle" title="Toggle notification sounds" aria-pressed="false">🔊 Sound on</button>
         <div class="meta" id="jobId">Job: ...</div>
         <div class="meta" id="workflowName">Workflow: ...</div>
-        <div class="meta" id="lastUpdated">Updated: ...</div>
+        <div class="meta" id="headerUpdated">Updated: ...</div>
         <div class="meta" id="pipelinePid" style="display: none;" title="Pipeline process ID — use 'ps -p &lt;PID&gt;' to check if still running">PID: --</div>
       </div>
     </div>
-  </header>
-
-  <div class="dashboard">
-    <!-- Sidebar: Phases -->
-    <aside>
-      <div class="card">
-        <div class="card-title">Pipeline Status</div>
-        <div id="phasesList" class="phase-list">
-          <!-- Populated by JS -->
-          <div class="phase-item pending">Loading...</div>
-        </div>
-        <div id="lastUpdated" class="updated-bar"></div>
-        <div id="generatingStatus" class="generating-status"></div>
-        <div id="storyBuildTime" class="updated-bar" style="display: none;"></div>
+    <div class="header-pipeline" role="region" aria-label="Pipeline status">
+      <span class="pipeline-label">Pipeline</span>
+      <div id="phasesList" class="phase-list phase-list-inline">
+        <div class="phase-item pending">Loading...</div>
       </div>
-
-      <div id="pipelineErrorCard" class="card pipeline-error-card" style="display: none; margin-top: var(--space-md); border-color: var(--error);">
-        <div class="card-title" style="color: var(--error); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-          <span>Pipeline error</span>
+      <div id="lastUpdated" class="updated-bar"></div>
+      <div id="generatingStatus" class="generating-status"></div>
+      <div id="storyBuildTime" class="updated-bar" style="display: none;"></div>
+      <div id="pipelineErrorCard" class="pipeline-error-card" style="display: none; padding: var(--space-md); border: 1px solid var(--error); border-radius: 0;">
+        <div style="color: var(--error); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: var(--space-sm);">
+          <span style="font-weight: 600;">Pipeline error</span>
           <button id="copyErrorBtn" type="button" class="copy-error-btn" title="Copy error and traceback to clipboard">Copy error</button>
         </div>
         <div id="pipelineErrorSummary" class="pipeline-error-summary"></div>
         <pre id="pipelineTraceback" class="pipeline-traceback"></pre>
       </div>
+    </div>
+  </header>
 
-      <div class="card" style="margin-top: var(--space-lg); border-color: var(--border);">
+  <div class="dashboard sidebar-collapsed" id="dashboard">
+    <!-- Sidebar: collapses to narrow left strip so main area expands; collapsed by default; auto-expand on error -->
+    <aside id="sidebarColumn" class="sidebar-column collapsed" aria-label="Output folder and system info">
+      <div class="sidebar-content">
+      <div class="card">
         <div class="card-title">Output Folder</div>
-        <div
-          style="font-size: 0.8rem; word-break: break-all; color: var(--text-secondary); margin-bottom: var(--space-sm);">
+        <div style="font-size: 0.8rem; word-break: break-all; color: var(--text-secondary); margin-bottom: var(--space-sm);">
           <code id="outputPath" style="user-select: all; cursor: pointer;" title="Click to copy">--</code>
         </div>
         <button id="copyPathBtn"
-          style="background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 4px 8px; font-family: inherit; font-size: 0.75rem; cursor: pointer; text-transform: uppercase;">Copy
-          Path</button>
+          style="background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 4px 8px; font-family: inherit; font-size: 0.75rem; cursor: pointer; text-transform: uppercase;">Copy Path</button>
       </div>
 
-      <div class="card" style="margin-top: var(--space-lg); border-color: var(--border);">
+      <div class="card">
         <div class="card-title">System Status</div>
         <div style="font-size: 0.8rem; color: var(--text-secondary);">
           Server: <span id="connectionStatus" style="color: var(--success);">--</span><br>
@@ -1158,6 +1321,10 @@
             Run: <code>python -m http.server</code> in story folder to view.
           </div>
         </div>
+      </div>
+      </div>
+      <div class="sidebar-toggle-strip">
+        <button type="button" id="sidebarToggleBtn" class="sidebar-toggle-btn" title="Expand sidebar (collapse to expand main area)" aria-label="Expand sidebar">▶</button>
       </div>
     </aside>
 
@@ -1263,6 +1430,36 @@
       });
     }
 
+    // Whole sidebar column: collapse to narrow left strip so main area expands; collapsed by default; auto-expand on error
+    const dashboardEl = document.getElementById("dashboard");
+    const sidebarColumnEl = document.getElementById("sidebarColumn");
+    const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
+
+    function isSidebarColumnExpanded() {
+      return sidebarColumnEl && !sidebarColumnEl.classList.contains("collapsed");
+    }
+    function setSidebarColumnExpanded(expanded) {
+      if (!dashboardEl || !sidebarColumnEl) return;
+      dashboardEl.classList.toggle("sidebar-collapsed", !expanded);
+      sidebarColumnEl.classList.toggle("collapsed", !expanded);
+      if (sidebarToggleBtn) {
+        sidebarToggleBtn.textContent = expanded ? "◀" : "▶";
+        sidebarToggleBtn.title = expanded ? "Collapse sidebar (expand main area)" : "Expand sidebar";
+        sidebarToggleBtn.setAttribute("aria-label", expanded ? "Collapse sidebar" : "Expand sidebar");
+      }
+    }
+    function expandSidebarColumn() {
+      setSidebarColumnExpanded(true);
+    }
+    function toggleSidebarColumn() {
+      setSidebarColumnExpanded(!isSidebarColumnExpanded());
+    }
+    if (sidebarToggleBtn) {
+      sidebarToggleBtn.addEventListener("click", toggleSidebarColumn);
+    }
+    // Start collapsed (dashboard and aside already have collapsed classes in HTML)
+    setSidebarColumnExpanded(false);
+
     function renderPhases(data) {
       if (!data || !data.phases) return;
 
@@ -1309,6 +1506,11 @@
 
       // Show pipeline error / traceback when present (written by generator on exception)
       const hasError = data.error || data.traceback;
+      const anyPhaseError = data.phases && Object.values(data.phases).some(function(s) {
+        const t = (String(s || "")).toLowerCase();
+        return t === "error" || t === "failed";
+      });
+      if (hasError || anyPhaseError) expandSidebarColumn();
       if (els.pipelineErrorCard) {
         els.pipelineErrorCard.style.display = hasError ? "block" : "none";
         if (hasError) {
@@ -1332,10 +1534,17 @@
       }
 
       const order = (data.phase_order && data.phase_order.length) ? data.phase_order : Object.keys(data.phases);
+      const phaseProgress = data.phase_progress || {};
 
       const html = order.map(key => {
         const status = data.phases[key] || "pending";
         const label = key.toUpperCase().replace(/_/g, " ");
+        const progress = phaseProgress[key];
+        const complete = progress && typeof progress.complete === "number" ? progress.complete : null;
+        const total = progress && typeof progress.total === "number" ? progress.total : null;
+        const progressText = (complete != null && total != null && total > 0)
+          ? (status === "running" ? `${complete}/${total} complete` : `${complete}/${total}`)
+          : "";
 
         let icon = "○";
         let iconClass = "phase-icon";
@@ -1348,6 +1557,7 @@
         }
 
         const badgeClass = `status-badge ${status}`;
+        const statusLabel = progressText ? `${status} · ${progressText}` : status;
 
         // Add a pulsing effect to the running item
         const itemClass = `phase-item ${status} ${status === 'running' ? 'blink-border' : ''}`;
@@ -1356,7 +1566,7 @@
                 <div class="${itemClass}">
                     <div class="${iconClass}">${icon}</div>
                     <div class="phase-name">${label}</div>
-                    <div class="${badgeClass}">${status}</div>
+                    <div class="${badgeClass}">${statusLabel}</div>
                 </div>
             `;
       }).join("");
@@ -1397,7 +1607,7 @@
       if (!assets || !assets.length) return { html: "", badge: "" };
       const base = progressBaseUrl || "";
       let html = `<div class="shot-list" style="display:none;" id="${listId}">`;
-      html += `<table class="assets-table"><thead><tr><th class="col-expand" title="Expand/collapse row">⋮</th><th class="col-name">Name</th><th class="col-why">Why</th><th class="col-meta">Metadata</th><th class="col-status">Status</th><th class="col-output">Output</th></tr></thead><tbody>`;
+      html += `<table class="assets-table"><thead><tr><th class="col-expand" title="Expand/collapse row">⋮</th><th class="col-name">Name</th><th class="col-workflow">Workflow</th><th class="col-why">Why</th><th class="col-meta">Metadata</th><th class="col-status">Status</th><th class="col-output">Output</th></tr></thead><tbody>`;
       html += assets.map((a, idx) => {
         const name = a.asset_name || a.assetName || "(unnamed)";
         const type = a.type || "unknown";
@@ -1406,8 +1616,9 @@
         const params = a.params || {};
         const skillReason = (a.skill_reason || "").replace(/\s+/g, " ").trim();
         const { html: metaHtml, title: metaTitle } = buildMetadataCell(params);
-        const nameCell = `<div class="shot-icon" title="${escapeAttr(type)}" style="display:inline-block; vertical-align:middle; margin-right:6px;">${shapeHtml(type)}</div><span>${escapeHtml(name)} · ${escapeHtml(workflow)}</span>`;
-        const nameTitle = (name || "") + (workflow ? " · " + workflow : "");
+        const nameCell = `<div class="shot-icon" title="${escapeAttr(type)}" style="display:inline-block; vertical-align:middle; margin-right:6px;">${shapeHtml(type)}</div><span>${escapeHtml(name)}</span>`;
+        const nameTitle = name || "";
+        const workflowCell = workflow ? `<span class="workflow-id" title="${escapeAttr(workflow)}">${escapeHtml(workflow)}</span>` : "—";
         const whyCell = skillReason
           ? `<span class="asset-cell-truncate" title="${escapeAttr(skillReason)}">${escapeHtml(skillReason)}</span>`
           : "—";
@@ -1417,11 +1628,12 @@
         const outputTitle = outputPathRaw ? outputPathRaw.replace(/\\/g, "/") : "No output";
         const metaTitleAttr = metaTitle ? ` title="${escapeAttr(metaTitle)}"` : "";
         const nameTitleAttr = nameTitle ? ` title="${escapeAttr(nameTitle)}"` : "";
+        const workflowTitleAttr = workflow ? ` title="${escapeAttr(workflow)}"` : "";
         const statusTitleAttr = ` title="${escapeAttr(status)}"`;
         const outputTitleAttr = ` title="${escapeAttr(outputTitle)}"`;
         const rowKey = escapeAttr(listId + ":" + idx);
         const expandBtn = `<button type="button" class="row-expand-btn" onclick="toggleRowExpand(this)" title="Expand row (show full text)">+</button>`;
-        return `<tr data-row-key="${rowKey}"><td class="col-expand">${expandBtn}</td><td class="col-name"${nameTitleAttr}>${nameCell}</td><td class="col-why"${whyTitleAttr}>${whyCell}</td><td class="col-meta"${metaTitleAttr}><div class="shot-prompt">${metaHtml}</div></td><td class="col-status"${statusTitleAttr}>${escapeHtml(status)}</td><td class="col-output"${outputTitleAttr}>${outputCell}</td></tr>`;
+        return `<tr data-row-key="${rowKey}"><td class="col-expand">${expandBtn}</td><td class="col-name"${nameTitleAttr}>${nameCell}</td><td class="col-workflow"${workflowTitleAttr}>${workflowCell}</td><td class="col-why"${whyTitleAttr}>${whyCell}</td><td class="col-meta"${metaTitleAttr}><div class="shot-prompt">${metaHtml}</div></td><td class="col-status"${statusTitleAttr}>${escapeHtml(status)}</td><td class="col-output"${outputTitleAttr}>${outputCell}</td></tr>`;
       }).join("");
       html += "</tbody></table></div>";
       const assetTypeLabel = listId === "story-assets" ? "STORY" : listId.startsWith("chapter-assets") ? "CHAPTER" : "ASSETS";
@@ -1614,7 +1826,7 @@
           if (assetsList.length > 0) {
             const panelId = "shots-" + i + "-" + si;
             shotsHtml = `<div class="shot-list" style="display:none;" id="${panelId}">`;
-            shotsHtml += `<table class="assets-table"><thead><tr><th class="col-expand" title="Expand/collapse row">⋮</th><th class="col-name">Name</th><th class="col-why">Why</th><th class="col-meta">Metadata</th><th class="col-status">Status</th><th class="col-output">Output</th></tr></thead><tbody>`;
+            shotsHtml += `<table class="assets-table"><thead><tr><th class="col-expand" title="Expand/collapse row">⋮</th><th class="col-name">Name</th><th class="col-workflow">Workflow</th><th class="col-why">Why</th><th class="col-meta">Metadata</th><th class="col-status">Status</th><th class="col-output">Output</th></tr></thead><tbody>`;
             shotsHtml += assetsList.map((a, ai) => {
               const name = a.asset_name || a.assetName || "(unnamed)";
               const type = a.type || "unknown";
@@ -1623,8 +1835,9 @@
               const params = a.params || {};
               const skillReason = (a.skill_reason || "").replace(/\s+/g, " ").trim();
               const { html: metaHtml, title: metaTitle } = buildMetadataCell(params);
-              const nameCell = `<div class="shot-icon" title="${escapeAttr(type)}" style="display:inline-block; vertical-align:middle; margin-right:6px;">${shapeHtml(type)}</div><span>${escapeHtml(name)} · ${escapeHtml(workflow)}</span>`;
-              const nameTitle = (name || "") + (workflow ? " · " + workflow : "");
+              const nameCell = `<div class="shot-icon" title="${escapeAttr(type)}" style="display:inline-block; vertical-align:middle; margin-right:6px;">${shapeHtml(type)}</div><span>${escapeHtml(name)}</span>`;
+              const nameTitle = name || "";
+              const workflowCell = workflow ? `<span class="workflow-id" title="${escapeAttr(workflow)}">${escapeHtml(workflow)}</span>` : "—";
               const whyCell = skillReason
                 ? `<span class="asset-cell-truncate" title="${escapeAttr(skillReason)}">${escapeHtml(skillReason)}</span>`
                 : "—";
@@ -1635,11 +1848,12 @@
               const metaTitleShort = metaTitle.length > 400 ? metaTitle.slice(0, 400) + "…" : metaTitle;
               const metaTitleAttr = metaTitle ? ` title="${escapeAttr(metaTitleShort)}"` : "";
               const nameTitleAttr = nameTitle ? ` title="${escapeAttr(nameTitle)}"` : "";
+              const workflowTitleAttr = workflow ? ` title="${escapeAttr(workflow)}"` : "";
               const statusTitleAttr = ` title="${escapeAttr(status)}"`;
               const outputTitleAttr = ` title="${escapeAttr(outputTitle)}"`;
               const rowKey = escapeAttr(panelId + ":" + ai);
               const expandBtn = `<button type="button" class="row-expand-btn" onclick="toggleRowExpand(this)" title="Expand row (show full text)">+</button>`;
-              return `<tr data-row-key="${rowKey}"><td class="col-expand">${expandBtn}</td><td class="col-name"${nameTitleAttr}>${nameCell}</td><td class="col-why"${whyTitleAttr}>${whyCell}</td><td class="col-meta"${metaTitleAttr}><div class="shot-prompt">${metaHtml}</div></td><td class="col-status"${statusTitleAttr}>${escapeHtml(status)}</td><td class="col-output"${outputTitleAttr}>${outputCell}</td></tr>`;
+              return `<tr data-row-key="${rowKey}"><td class="col-expand">${expandBtn}</td><td class="col-name"${nameTitleAttr}>${nameCell}</td><td class="col-workflow"${workflowTitleAttr}>${workflowCell}</td><td class="col-why"${whyTitleAttr}>${whyCell}</td><td class="col-meta"${metaTitleAttr}><div class="shot-prompt">${metaHtml}</div></td><td class="col-status"${statusTitleAttr}>${escapeHtml(status)}</td><td class="col-output"${outputTitleAttr}>${outputCell}</td></tr>`;
             }).join("");
             shotsHtml += "</tbody></table></div>";
           }
@@ -1931,11 +2145,13 @@
         } else {
           if (lastConnectionStatus === "CONNECTED") playErrorSound();
           lastConnectionStatus = "OFFLINE";
+          expandSidebarColumn();
           if (els.conn) { els.conn.textContent = "OFFLINE"; els.conn.style.color = "var(--error)"; }
         }
       } catch (e) {
         if (lastConnectionStatus === "CONNECTED") playErrorSound();
         lastConnectionStatus = "ERROR";
+        expandSidebarColumn();
         if (els.conn) { els.conn.textContent = "ERROR"; els.conn.style.color = "var(--error)"; }
       }
     }

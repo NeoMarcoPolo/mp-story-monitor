@@ -7,7 +7,7 @@ import subprocess
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Sequence
+from typing import Dict, Sequence, Optional
 
 # #region agent log
 DEBUG_LOG = Path("/Users/senzhang/mp-llp/.cursor/debug.log")
@@ -59,6 +59,7 @@ class ProgressTracker:
         self.workflow = workflow or "story"
         self._phase_names: tuple = tuple(phase_names) if phase_names else DEFAULT_PHASE_ORDER
         self._phases: Dict[str, str] = {p: "pending" for p in self._phase_names}
+        self._phase_progress: Dict[str, Dict[str, int]] = {}  # e.g. {"production": {"complete": 12, "total": 35}}
         self._heartbeat_stop = threading.Event()
         self._heartbeat_thread: threading.Thread | None = None
 
@@ -82,6 +83,8 @@ class ProgressTracker:
                 "story_path": str(self.story_path.resolve()),
                 "pid": os.getpid(),
             }
+            if self._phase_progress:
+                payload["phase_progress"] = dict(self._phase_progress)
             # #region agent log
             _agent_log("tracker.py:_write_progress", "Writing _progress.json", {"story_path": str(self.story_path.resolve()), "updated_ts": payload["updated_ts"], "phases": payload["phases"]}, "H1,H3")
             # #endregion
@@ -145,6 +148,13 @@ class ProgressTracker:
         self._heartbeat_stop.clear()
         self._heartbeat_thread = threading.Thread(target=self._heartbeat_loop, daemon=True)
         self._heartbeat_thread.start()
+
+    def set_phase_progress(self, phase: str, complete: int, total: int) -> None:
+        """Set progress counts for a phase (e.g. production: 12/35). Written to _progress.json and shown in viewer."""
+        if total < 0 or complete < 0:
+            return
+        self._phase_progress[phase] = {"complete": complete, "total": total}
+        self._write_progress()
 
     def finish(self, phase: str, play_sound: bool = True, current_step: str = "") -> None:
         """Mark phase as done, optionally play sound, persist. Stop heartbeat."""
