@@ -944,62 +944,87 @@
       border-bottom: none;
     }
 
-    /* Table layout for assets (Name | Workflow | Why | Metadata | Status | Output). Column widths sum to 100% so table fills container; min-width triggers horizontal scroll when narrow. */
+    /* ═══════════════════════════════════════════════════════════════════
+       ASSET TABLE — Mission Control Console
+       ═══════════════════════════════════════════════════════════════════ */
     .assets-table {
       width: 100%;
       min-width: 900px;
-      border-collapse: collapse;
-      font-size: 0.875rem;
-      margin-top: 0.5rem;
+      border-collapse: separate;
+      border-spacing: 0 2px;
+      font-size: 0.82rem;
+      margin-top: 0.75rem;
       table-layout: fixed;
+    }
+
+    /* Header row */
+    .assets-table thead tr {
+      background: linear-gradient(180deg, rgba(0, 236, 255, 0.06) 0%, transparent 100%);
     }
     .assets-table th {
       text-align: left;
-      padding: 0.5rem 0.75rem;
-      vertical-align: top;
-      border-bottom: 2px solid var(--border);
-      color: var(--text-secondary);
-      font-weight: 600;
+      padding: 0.6rem 0.75rem;
+      vertical-align: middle;
+      border-bottom: 1px solid rgba(0, 236, 255, 0.15);
+      color: rgba(0, 236, 255, 0.6);
+      font-weight: 700;
       text-transform: uppercase;
-      font-size: 0.7rem;
-      letter-spacing: 0.05em;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
     }
+
+    /* Body rows */
     .assets-table td {
-      padding: 0.5rem 0.75rem;
-      border-bottom: 1px solid #2a2a2a;
+      padding: 0.6rem 0.75rem;
       vertical-align: top;
-      color: #ccc;
+      color: #bbb;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      transition: background 0.15s ease;
     }
-    .assets-table td[title] {
-      cursor: help;
-    }
-    .assets-table tbody tr:nth-child(odd) {
-      background: rgba(255, 255, 255, 0.02);
+    .assets-table td[title] { cursor: help; }
+    .assets-table tbody tr {
+      background: rgba(255, 255, 255, 0.015);
+      border-left: 2px solid transparent;
+      transition: all 0.15s ease;
     }
     .assets-table tbody tr:hover {
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(0, 236, 255, 0.03);
+      border-left-color: rgba(0, 236, 255, 0.3);
     }
-    .assets-table tr:last-child td {
-      border-bottom: none;
+    .assets-table tbody tr:hover td:first-child {
+      box-shadow: inset 2px 0 0 var(--accent);
     }
-    /* NAME column: align header with name text (after icon); avoid premature wrap by clamping only the text */
-    .assets-table th.col-name {
-      padding-left: 2.25rem; /* align "Name" with name text, not the icon */
-    }
+    .assets-table tr:last-child td { border-bottom: none; }
+
+    /* ── NAME column ── */
+    .assets-table th.col-name { padding-left: 2.5rem; }
     .assets-table .col-name {
-      width: 20%;
-      color: var(--accent);
-      font-weight: 600;
+      width: 22%;
+      min-width: 140px;
+      vertical-align: top;
+    }
+    .assets-table .col-name .name-inner {
       display: flex;
-      align-items: center;
-      gap: 6px;
+      align-items: flex-start;
+      gap: 8px;
     }
     .assets-table .col-name .shot-icon {
       flex-shrink: 0;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 236, 255, 0.08);
+      border-radius: 5px;
+      border: 1px solid rgba(0, 236, 255, 0.15);
+      color: var(--accent);
+      margin-top: 1px;
+      transform: scale(0.78);
     }
-    .assets-table .col-name > span {
-      flex: 1 1 0;
-      min-width: 0;
+    .assets-table .col-name .name-inner > span {
+      color: var(--accent);
+      font-weight: 600;
       overflow: hidden;
       text-overflow: ellipsis;
       display: -webkit-box;
@@ -1008,25 +1033,36 @@
       line-clamp: 2;
       line-height: 1.4;
       word-break: break-word;
+      overflow-wrap: break-word;
+      font-size: 0.8rem;
+      letter-spacing: 0.01em;
     }
+
+    /* ── WORKFLOW column ── */
     .assets-table .col-workflow {
       width: 14%;
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-      font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+      font-size: 0.72rem;
     }
     .assets-table .col-workflow .workflow-id {
-      display: block;
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      padding: 2px 6px;
+      font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+      color: #999;
+      max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      max-width: 100%;
     }
+
+    /* ── WHY column ── */
     .assets-table .col-why {
-      width: 20%;
-      font-style: italic;
-      color: #8a9;
-      font-size: 0.8rem;
+      width: 18%;
+      font-size: 0.78rem;
+      color: #7a9a85;
+      line-height: 1.45;
     }
     .asset-cell-truncate {
       display: -webkit-box;
@@ -1036,10 +1072,12 @@
       overflow: hidden;
       text-overflow: ellipsis;
       word-break: break-word;
-      line-height: 1.35;
+      line-height: 1.4;
     }
+
+    /* ── METADATA column ── */
     .assets-table .col-meta {
-      width: 25%;
+      width: 23%;
     }
     .assets-table .col-meta .shot-prompt {
       display: -webkit-box;
@@ -1049,18 +1087,56 @@
       overflow: hidden;
       text-overflow: ellipsis;
       word-break: break-word;
-      line-height: 1.35;
-      max-height: 2.8em;
-    }
-    .assets-table .col-status {
-      width: 8%;
-      min-width: 4.5rem;
-      text-align: right;
+      line-height: 1.4;
+      max-height: 2.9em;
       font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      color: var(--text-secondary);
     }
+
+    /* ── STATUS column ── */
+    .assets-table .col-status {
+      width: 10%;
+      min-width: 5.5rem;
+      text-align: right;
+      vertical-align: top;
+      padding-top: 0.65rem;
+    }
+    .status-badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      border-radius: 3px;
+      line-height: 1;
+    }
+    .status-badge.s-pending {
+      background: rgba(255, 255, 255, 0.05);
+      color: #555;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .status-badge.s-complete, .status-badge.s-success {
+      background: rgba(0, 255, 157, 0.08);
+      color: var(--success);
+      border: 1px solid rgba(0, 255, 157, 0.2);
+    }
+    .status-badge.s-running, .status-badge.s-generating {
+      background: rgba(0, 236, 255, 0.08);
+      color: var(--accent);
+      border: 1px solid rgba(0, 236, 255, 0.25);
+      animation: statusPulse 2s ease-in-out infinite;
+    }
+    .status-badge.s-failed, .status-badge.s-error {
+      background: rgba(255, 0, 85, 0.1);
+      color: var(--error);
+      border: 1px solid rgba(255, 0, 85, 0.25);
+    }
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    /* ── OUTPUT column ── */
     .assets-table .col-output {
       width: 10%;
       min-width: 6rem;
@@ -1069,24 +1145,30 @@
     .assets-table .col-output img,
     .assets-table .col-output video {
       border-radius: 4px;
-      border: 1px solid #333;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: transform 0.15s ease;
+    }
+    .assets-table .col-output img:hover,
+    .assets-table .col-output video:hover {
+      transform: scale(1.05);
+      border-color: rgba(0, 236, 255, 0.3);
     }
 
-    /* Expand/collapse column and row-expanded state for debugging */
+    /* ── EXPAND column ── */
     .assets-table .col-expand {
       width: 3%;
       min-width: 2rem;
       max-width: 2.5rem;
-      padding: 0.25rem 0.35rem;
+      padding: 0.4rem 0.35rem;
       text-align: center;
       vertical-align: top;
     }
     .row-expand-btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text-secondary);
-      font-size: 0.75rem;
-      font-weight: 600;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #555;
+      font-size: 0.7rem;
+      font-weight: 700;
       width: 22px;
       height: 22px;
       padding: 0;
@@ -1094,10 +1176,20 @@
       cursor: pointer;
       border-radius: 3px;
       font-family: inherit;
+      transition: all 0.12s ease;
     }
     .row-expand-btn:hover {
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(0, 236, 255, 0.08);
+      border-color: rgba(0, 236, 255, 0.3);
       color: var(--accent);
+    }
+
+    /* ── Expanded row state ── */
+    .assets-table tbody tr.row-expanded {
+      background: rgba(0, 236, 255, 0.02);
+    }
+    .assets-table tbody tr.row-expanded td:first-child {
+      box-shadow: inset 2px 0 0 var(--accent);
     }
     .assets-table tbody tr.row-expanded .col-name {
       white-space: normal;
@@ -1106,7 +1198,8 @@
       max-width: none;
       word-break: break-word;
     }
-    .assets-table tbody tr.row-expanded .col-name > span {
+    .assets-table tbody tr.row-expanded .col-name > span,
+    .assets-table tbody tr.row-expanded .col-name .name-inner > span {
       overflow: visible;
       text-overflow: clip;
       -webkit-line-clamp: unset;
@@ -1118,9 +1211,7 @@
       text-overflow: clip;
       word-break: break-word;
     }
-    .assets-table tbody tr.row-expanded .col-why {
-      max-width: none;
-    }
+    .assets-table tbody tr.row-expanded .col-why { max-width: none; }
     .assets-table tbody tr.row-expanded .asset-cell-truncate {
       display: block;
       -webkit-line-clamp: unset;
@@ -1148,20 +1239,24 @@
     }
 
     .toggle-shots-btn {
-      background: transparent;
-      border: none;
+      background: rgba(0, 236, 255, 0.04);
+      border: 1px solid rgba(0, 236, 255, 0.15);
       color: var(--accent);
       font-family: inherit;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       cursor: pointer;
-      padding: 0;
-      margin-top: 0.5rem;
+      padding: 4px 12px;
+      margin-top: 0.6rem;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.08em;
+      border-radius: 3px;
+      font-weight: 600;
+      transition: all 0.12s ease;
     }
 
     .toggle-shots-btn:hover {
-      text-decoration: underline;
+      background: rgba(0, 236, 255, 0.1);
+      border-color: rgba(0, 236, 255, 0.35);
     }
 
     /* DEBUG mode banner at top of story area */
@@ -1395,6 +1490,15 @@
       return "";
     }
 
+    function statusBadgeHtml(status) {
+      const s = (status || "pending").toLowerCase().replace(/[^a-z]/g, "");
+      const cls = s.includes("complete") || s === "success" ? "s-complete"
+        : s === "running" || s === "generating" ? "s-running"
+        : s === "failed" || s === "error" ? "s-failed"
+        : "s-pending";
+      return `<span class="status-badge ${cls}">${escapeHtml(status)}</span>`;
+    }
+
     function formatTimeAgo(ts) {
       if (!ts) return "";
       const t = new Date(ts).getTime();
@@ -1576,14 +1680,19 @@
 
     /** Build metadata cell HTML from asset params. Returns { html, title } for optional tooltip. */
     function buildMetadataCell(params) {
-      if (!params || !Object.keys(params).length) return { html: "<span style=\"color:#555;\">(No parameters)</span>", title: "" };
+      if (!params || !Object.keys(params).length) return { html: '<span style="color:#333;">—</span>', title: "" };
       const entries = Object.entries(params)
         .filter(([_, v]) => v !== null && v !== "" && v !== undefined);
       const html = entries.map(([k, v]) => {
         const { html: valFormatted, isBlock } = formatParamValue(k, v);
-        const rowStyle = isBlock ? "display:block; margin-top:6px;" : "display:flex; gap:10px; margin-top:2px;";
-        const valueStyle = isBlock ? "color:#ccc; margin-top:4px; line-height:1.4; display:block;" : "color:#ccc;";
-        return `<div style="${rowStyle}"><span style="color:#666; min-width:80px;">${escapeHtml(k)}:</span><span style="${valueStyle}">${valFormatted}</span></div>`;
+        const rowStyle = isBlock
+          ? "display:block; margin-top:6px;"
+          : "display:flex; gap:6px; align-items:baseline; margin-top:3px; font-size:0.75rem; line-height:1.4;";
+        const keyStyle = "color:rgba(0,236,255,0.35); font-size:0.68rem; letter-spacing:0.03em; flex-shrink:0;";
+        const valueStyle = isBlock
+          ? "color:#aaa; margin-top:3px; line-height:1.4; display:block; font-size:0.75rem;"
+          : "color:#aaa; word-break:break-word; overflow-wrap:break-word;";
+        return `<div style="${rowStyle}"><span style="${keyStyle}">${escapeHtml(k)}:</span><span style="${valueStyle}">${valFormatted}</span></div>`;
       }).join("");
       const title = entries.map(([k, v]) => k + ": " + (typeof v === "string" ? v : JSON.stringify(v))).join("\n");
       return { html, title };
@@ -1616,7 +1725,7 @@
         const params = a.params || {};
         const skillReason = (a.skill_reason || "").replace(/\s+/g, " ").trim();
         const { html: metaHtml, title: metaTitle } = buildMetadataCell(params);
-        const nameCell = `<div class="shot-icon" title="${escapeAttr(type)}" style="display:inline-block; vertical-align:middle; margin-right:6px;">${shapeHtml(type)}</div><span>${escapeHtml(name)}</span>`;
+        const nameCell = `<div class="name-inner"><div class="shot-icon" title="${escapeAttr(type)}">${shapeHtml(type)}</div><span>${escapeHtml(name)}</span></div>`;
         const nameTitle = name || "";
         const workflowCell = workflow ? `<span class="workflow-id" title="${escapeAttr(workflow)}">${escapeHtml(workflow)}</span>` : "—";
         const whyCell = skillReason
@@ -1633,7 +1742,7 @@
         const outputTitleAttr = ` title="${escapeAttr(outputTitle)}"`;
         const rowKey = escapeAttr(listId + ":" + idx);
         const expandBtn = `<button type="button" class="row-expand-btn" onclick="toggleRowExpand(this)" title="Expand row (show full text)">+</button>`;
-        return `<tr data-row-key="${rowKey}"><td class="col-expand">${expandBtn}</td><td class="col-name"${nameTitleAttr}>${nameCell}</td><td class="col-workflow"${workflowTitleAttr}>${workflowCell}</td><td class="col-why"${whyTitleAttr}>${whyCell}</td><td class="col-meta"${metaTitleAttr}><div class="shot-prompt">${metaHtml}</div></td><td class="col-status"${statusTitleAttr}>${escapeHtml(status)}</td><td class="col-output"${outputTitleAttr}>${outputCell}</td></tr>`;
+        return `<tr data-row-key="${rowKey}"><td class="col-expand">${expandBtn}</td><td class="col-name"${nameTitleAttr}>${nameCell}</td><td class="col-workflow"${workflowTitleAttr}>${workflowCell}</td><td class="col-why"${whyTitleAttr}>${whyCell}</td><td class="col-meta"${metaTitleAttr}><div class="shot-prompt">${metaHtml}</div></td><td class="col-status"${statusTitleAttr}>${statusBadgeHtml(status)}</td><td class="col-output"${outputTitleAttr}>${outputCell}</td></tr>`;
       }).join("");
       html += "</tbody></table></div>";
       const assetTypeLabel = listId === "story-assets" ? "STORY" : listId.startsWith("chapter-assets") ? "CHAPTER" : "ASSETS";
@@ -1835,7 +1944,7 @@
               const params = a.params || {};
               const skillReason = (a.skill_reason || "").replace(/\s+/g, " ").trim();
               const { html: metaHtml, title: metaTitle } = buildMetadataCell(params);
-              const nameCell = `<div class="shot-icon" title="${escapeAttr(type)}" style="display:inline-block; vertical-align:middle; margin-right:6px;">${shapeHtml(type)}</div><span>${escapeHtml(name)}</span>`;
+              const nameCell = `<div class="name-inner"><div class="shot-icon" title="${escapeAttr(type)}">${shapeHtml(type)}</div><span>${escapeHtml(name)}</span></div>`;
               const nameTitle = name || "";
               const workflowCell = workflow ? `<span class="workflow-id" title="${escapeAttr(workflow)}">${escapeHtml(workflow)}</span>` : "—";
               const whyCell = skillReason
@@ -1853,7 +1962,7 @@
               const outputTitleAttr = ` title="${escapeAttr(outputTitle)}"`;
               const rowKey = escapeAttr(panelId + ":" + ai);
               const expandBtn = `<button type="button" class="row-expand-btn" onclick="toggleRowExpand(this)" title="Expand row (show full text)">+</button>`;
-              return `<tr data-row-key="${rowKey}"><td class="col-expand">${expandBtn}</td><td class="col-name"${nameTitleAttr}>${nameCell}</td><td class="col-workflow"${workflowTitleAttr}>${workflowCell}</td><td class="col-why"${whyTitleAttr}>${whyCell}</td><td class="col-meta"${metaTitleAttr}><div class="shot-prompt">${metaHtml}</div></td><td class="col-status"${statusTitleAttr}>${escapeHtml(status)}</td><td class="col-output"${outputTitleAttr}>${outputCell}</td></tr>`;
+              return `<tr data-row-key="${rowKey}"><td class="col-expand">${expandBtn}</td><td class="col-name"${nameTitleAttr}>${nameCell}</td><td class="col-workflow"${workflowTitleAttr}>${workflowCell}</td><td class="col-why"${whyTitleAttr}>${whyCell}</td><td class="col-meta"${metaTitleAttr}><div class="shot-prompt">${metaHtml}</div></td><td class="col-status"${statusTitleAttr}>${statusBadgeHtml(status)}</td><td class="col-output"${outputTitleAttr}>${outputCell}</td></tr>`;
             }).join("");
             shotsHtml += "</tbody></table></div>";
           }

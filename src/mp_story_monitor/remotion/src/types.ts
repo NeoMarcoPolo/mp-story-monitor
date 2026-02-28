@@ -10,5 +10,5 @@ export type TimelinesInputProps = {
 
 export const defaultInputProps: TimelinesInputProps = {
     story_id: "preview_default",
-    methods: {}
+    methods: {},
 };

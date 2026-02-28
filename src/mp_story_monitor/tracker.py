@@ -130,6 +130,47 @@ class ProgressTracker:
         except Exception as e:
             _agent_log("tracker.py:ensure_viewer", f"Failed to ensure viewer: {e}", {"story_path": str(self.story_path)}, "error")
 
+    def ensure_server(self, port: int = 8081) -> None:
+        """Kill any existing monitor server on port and start a fresh one for this story, then open browser."""
+        import signal
+        try:
+            # Kill existing server on the port
+            result = subprocess.run(
+                ["lsof", "-ti", f":{port}"],
+                capture_output=True, text=True, timeout=5,
+            )
+            for pid_str in result.stdout.strip().split("\n"):
+                pid_str = pid_str.strip()
+                if pid_str and pid_str.isdigit():
+                    pid = int(pid_str)
+                    if pid != os.getpid():
+                        os.kill(pid, signal.SIGTERM)
+
+            # Start new server in background
+            import sys
+            subprocess.Popen(
+                [
+                    sys.executable,
+                    "-m", "mp_story_monitor.serve_progress",
+                    "--port", str(port),
+                    str(self.story_path.resolve()),
+                ],
+                cwd=str(self.story_path.resolve()),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+
+            # Open browser
+            subprocess.Popen(
+                ["open", f"http://localhost:{port}/progress_viewer.html"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except Exception as e:
+            _agent_log("tracker.py:ensure_server", f"Failed to ensure server: {e}",
+                       {"story_path": str(self.story_path), "port": port}, "error")
+
     def _heartbeat_loop(self) -> None:
         """Refresh _progress.json every HEARTBEAT_INTERVAL_SEC so 'Last updated' shows process is alive."""
         # #region agent log
