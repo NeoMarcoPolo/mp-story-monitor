@@ -1358,6 +1358,54 @@
       0%, 100% { opacity: 1; background-color: rgba(0, 236, 255, 0.04); }
       50% { opacity: 0.98; background-color: rgba(0, 236, 255, 0.08); }
     }
+
+    /* ── Lightbox overlay for enlarged previews ── */
+    .preview-lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(6px);
+      cursor: zoom-out;
+    }
+    .preview-lightbox img,
+    .preview-lightbox video {
+      max-width: 90vw;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+    }
+    .preview-lightbox audio {
+      width: min(80vw, 500px);
+    }
+    .preview-lightbox .lightbox-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(0, 0, 0, 0.5);
+      border: none;
+      color: #fff;
+      font-size: 24px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .preview-lightbox .lightbox-close:hover {
+      background: rgba(0, 0, 0, 0.7);
+    }
+    .assets-table .col-output img,
+    .assets-table .col-output video {
+      cursor: zoom-in;
+    }
   </style>
 </head>
 
@@ -1705,9 +1753,9 @@
       const pathNorm = r.replace(/\\/g, "/");
       const url = (base ? base.replace(/\/$/, "") + "/" : "") + pathNorm;
       const type = (a.type || "").toLowerCase();
-      if (type === "image") return `<img src="${escapeAttr(url)}" alt="" style="max-width:120px; max-height:80px; object-fit:contain;" loading="lazy">`;
-      if (type === "audio") return `<audio controls src="${escapeAttr(url)}" style="max-width:200px;"></audio>`;
-      if (type === "video") return `<video controls src="${escapeAttr(url)}" style="max-width:160px; max-height:90px;"></video>`;
+      if (type === "image") return `<img src="${escapeAttr(url)}" alt="" style="max-width:120px; max-height:80px; object-fit:contain;" loading="lazy" onclick="openLightbox(this.src, 'image', event)">`;
+      if (type === "audio") return `<audio controls src="${escapeAttr(url)}" style="max-width:200px;" onclick="openLightbox(this.src, 'audio', event)"></audio>`;
+      if (type === "video") return `<video controls src="${escapeAttr(url)}" style="max-width:160px; max-height:90px;" onclick="openLightbox(this.src, 'video', event)"></video>`;
       return escapeHtml(r);
     }
 
@@ -2267,6 +2315,45 @@
 
     poll();
     setInterval(poll, 2000);
+
+    /* ── Lightbox for enlarged preview images/videos ── */
+    function openLightbox(src, type, event) {
+      event.stopPropagation();
+      event.preventDefault();
+      const overlay = document.createElement("div");
+      overlay.className = "preview-lightbox";
+      const closeBtn = document.createElement("button");
+      closeBtn.className = "lightbox-close";
+      closeBtn.innerHTML = "&#x2715;";
+      closeBtn.onclick = function () { overlay.remove(); };
+      overlay.appendChild(closeBtn);
+      let media;
+      if (type === "video") {
+        media = document.createElement("video");
+        media.src = src;
+        media.controls = true;
+        media.autoplay = true;
+        media.loop = true;
+      } else if (type === "audio") {
+        media = document.createElement("audio");
+        media.src = src;
+        media.controls = true;
+        media.autoplay = true;
+      } else {
+        media = document.createElement("img");
+        media.src = src;
+      }
+      media.onclick = function (e) { e.stopPropagation(); };
+      overlay.appendChild(media);
+      overlay.onclick = function () { overlay.remove(); };
+      document.addEventListener("keydown", function handler(e) {
+        if (e.key === "Escape") {
+          overlay.remove();
+          document.removeEventListener("keydown", handler);
+        }
+      });
+      document.body.appendChild(overlay);
+    }
 
   </script>
 </body>
