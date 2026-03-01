@@ -205,6 +205,14 @@ class ProgressTracker:
         if play_sound:
             self._play_sound(phase)
 
+    def error(self, phase: str, error_msg: str, traceback_str: str = "") -> None:
+        """Mark phase as error and record error details. Stop heartbeat."""
+        self._heartbeat_stop.set()
+        self._phases[phase] = "error"
+        self._write_progress()
+        # Also write error details using the standalone function
+        write_progress_error(self.story_path, error_msg, traceback_str)
+
     def complete(self) -> None:
         """Mark all phases done and set status to complete. Stop heartbeat."""
         self._heartbeat_stop.set()
