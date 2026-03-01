@@ -213,6 +213,12 @@ class ProgressTracker:
         # Also write error details using the standalone function
         write_progress_error(self.story_path, error_msg, traceback_str)
 
+    def skip(self, phase: str, reason: str = "") -> None:
+        """Mark phase as skipped. Stop heartbeat."""
+        self._heartbeat_stop.set()
+        self._phases[phase] = "skipped"
+        self._write_progress()
+
     def complete(self) -> None:
         """Mark all phases done and set status to complete. Stop heartbeat."""
         self._heartbeat_stop.set()
