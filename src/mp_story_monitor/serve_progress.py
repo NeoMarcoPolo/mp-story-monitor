@@ -11,6 +11,7 @@ Usage:
   from mp_story_monitor.serve_progress import serve
   serve(Path("/path/to/story"), port=8081)
 """
+import json
 import logging
 import os
 import socketserver
@@ -112,7 +113,87 @@ def serve(story_path: Path, port: int = DEFAULT_PORT) -> None:
                         return
                 except Exception as e:
                     logger.warning(f"Failed to serve _director_progress.json: {e}")
+            if path_clean == "api/commands":
+                from mp_story_monitor.commands import read_commands
+                from dataclasses import asdict
+                cmds = read_commands(self._story_path)
+                payload = {"commands": [asdict(c) for c in cmds]}
+                body = json.dumps(payload).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(body)
+                return
             super().do_GET()
+
+        def do_POST(self) -> None:
+            """Handle POST requests for control actions."""
+            from mp_story_monitor.commands import (
+                CommandAction, create_command, read_commands, write_commands,
+            )
+            from mp_story_monitor.reset import (
+                delete_asset_outputs, reset_scene, reset_chapter, reset_story,
+            )
+
+            path_clean = (self.path or "").split("?")[0].strip("/")
+            content_len = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(content_len)) if content_len > 0 else {}
+
+            result = {"ok": False, "error": "Unknown endpoint"}
+
+            if path_clean == "api/reset-asset":
+                asset_name = body.get("asset_name", "")
+                if not asset_name:
+                    result = {"ok": False, "error": "Missing asset_name"}
+                else:
+                    cmd = create_command(CommandAction.RESET_ASSET, asset_name)
+                    deleted = delete_asset_outputs(self._story_path, asset_name)
+                    cmds = read_commands(self._story_path)
+                    cmds.append(cmd)
+                    write_commands(self._story_path, cmds)
+                    result = {"ok": True, "command_id": cmd.id, "files_deleted": deleted}
+
+            elif path_clean == "api/reset-scene":
+                scene_id = body.get("scene_id", "")
+                if not scene_id:
+                    result = {"ok": False, "error": "Missing scene_id"}
+                else:
+                    cmd = create_command(CommandAction.RESET_SCENE, scene_id)
+                    deleted = reset_scene(self._story_path, scene_id)
+                    cmds = read_commands(self._story_path)
+                    cmds.append(cmd)
+                    write_commands(self._story_path, cmds)
+                    result = {"ok": True, "command_id": cmd.id, "files_deleted": deleted}
+
+            elif path_clean == "api/reset-chapter":
+                chapter_id = body.get("chapter_id", "")
+                if not chapter_id:
+                    result = {"ok": False, "error": "Missing chapter_id"}
+                else:
+                    cmd = create_command(CommandAction.RESET_CHAPTER, chapter_id)
+                    deleted = reset_chapter(self._story_path, chapter_id)
+                    cmds = read_commands(self._story_path)
+                    cmds.append(cmd)
+                    write_commands(self._story_path, cmds)
+                    result = {"ok": True, "command_id": cmd.id, "files_deleted": deleted}
+
+            elif path_clean == "api/reset-story":
+                cmd = create_command(CommandAction.RESET_STORY, "*")
+                deleted = reset_story(self._story_path)
+                cmds = read_commands(self._story_path)
+                cmds.append(cmd)
+                write_commands(self._story_path, cmds)
+                result = {"ok": True, "command_id": cmd.id, "files_deleted": deleted}
+
+            response_body = json.dumps(result).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(response_body)))
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(response_body)
 
     socketserver.TCPServer.allow_reuse_address = True
     try:
