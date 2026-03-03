@@ -1498,29 +1498,42 @@
       color: var(--error);
     }
     /* Reset buttons */
+    /* Reset buttons — matches mute-toggle / toggle-shots-btn style */
     .reset-btn {
-        background: #ff4444;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 2px 8px;
-        font-size: 11px;
-        cursor: pointer;
-        opacity: 0.7;
-        transition: opacity 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        background: rgba(255, 0, 85, 0.04);
+        border: 1px solid rgba(255, 0, 85, 0.2);
+        color: var(--error);
         font-family: inherit;
+        font-size: 0.7rem;
+        cursor: pointer;
+        padding: 3px 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        border-radius: 3px;
+        font-weight: 600;
+        transition: all 0.12s ease;
     }
-    .reset-btn:hover { opacity: 1; }
+    .reset-btn:hover {
+        background: rgba(255, 0, 85, 0.1);
+        border-color: rgba(255, 0, 85, 0.4);
+        color: var(--error);
+    }
     .reset-btn.scene-reset, .reset-btn.chapter-reset {
-        background: #ff6600;
         margin-left: 8px;
-        font-size: 12px;
-        padding: 3px 10px;
+        background: rgba(255, 170, 0, 0.04);
+        border-color: rgba(255, 170, 0, 0.2);
+        color: var(--warning);
+    }
+    .reset-btn.scene-reset:hover, .reset-btn.chapter-reset:hover {
+        background: rgba(255, 170, 0, 0.1);
+        border-color: rgba(255, 170, 0, 0.4);
     }
     .reset-btn.story-reset {
-        background: #cc0000;
-        font-size: 13px;
-        padding: 5px 14px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
     }
     /* Confirmation modal */
     .confirm-modal {
@@ -1529,17 +1542,25 @@
         display: flex; align-items: center; justify-content: center;
     }
     .confirm-modal-box {
-        background: #1e1e2e; border: 1px solid #444; border-radius: 8px;
-        padding: 24px; max-width: 480px; width: 90%; color: #ccc;
+        background: var(--dark-gray); border: 1px solid var(--border); border-radius: 3px;
+        padding: 24px; max-width: 480px; width: 90%; color: var(--text-secondary);
+        font-family: inherit;
     }
-    .confirm-modal-box h3 { color: #ff6644; margin-top: 0; }
+    .confirm-modal-box h3 { color: var(--error); margin-top: 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; }
+    .confirm-modal-box p { font-size: 0.8rem; line-height: 1.5; }
     .confirm-modal-box .btn-row { display: flex; gap: 12px; margin-top: 16px; justify-content: flex-end; }
     .confirm-modal-box .btn-cancel {
-        background: #444; color: #ccc; border: none; border-radius: 4px; padding: 8px 16px; cursor: pointer; font-family: inherit;
+        background: transparent; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 3px;
+        padding: 6px 14px; cursor: pointer; font-family: inherit; font-size: 0.75rem;
+        text-transform: uppercase; letter-spacing: 0.08em; transition: all 0.12s ease;
     }
+    .confirm-modal-box .btn-cancel:hover { border-color: var(--accent); color: var(--accent); }
     .confirm-modal-box .btn-confirm {
-        background: #ff4444; color: white; border: none; border-radius: 4px; padding: 8px 16px; cursor: pointer; font-family: inherit;
+        background: rgba(255, 0, 85, 0.08); color: var(--error); border: 1px solid rgba(255, 0, 85, 0.3); border-radius: 3px;
+        padding: 6px 14px; cursor: pointer; font-family: inherit; font-size: 0.75rem;
+        text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; transition: all 0.12s ease;
     }
+    .confirm-modal-box .btn-confirm:hover { background: rgba(255, 0, 85, 0.15); border-color: rgba(255, 0, 85, 0.5); }
     .reset-pending { opacity: 0.4; pointer-events: none; }
   </style>
 </head>
