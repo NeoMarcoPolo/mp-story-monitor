@@ -3,367 +3,1714 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Story Stitch Player</title>
+    <title>Story Preview - NLE Viewer</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-body: #0a0a0a;
+            --bg-panel: #111111;
+            --bg-surface: #151515;
+            --bg-elevated: #1a1a1a;
+            --border-subtle: #222222;
+            --border-medium: #333333;
+            --accent: #00ecff;
+            --accent-dim: rgba(0, 236, 255, 0.15);
+            --accent-glow: rgba(0, 236, 255, 0.3);
+            --text-primary: #e0e0e0;
+            --text-secondary: #999999;
+            --text-muted: #555555;
+            --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', Monaco, Consolas, 'Courier New', monospace;
+            --inspector-width: 340px;
+            --header-height: 48px;
+            --timeline-height: 140px;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0a0a;
-            color: #fff;
-            min-height: 100vh;
+            font-family: var(--font-ui);
+            background: var(--bg-body);
+            color: var(--text-primary);
             display: flex;
             flex-direction: column;
+            height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
-        header {
-            padding: 16px 24px;
-            background: #111;
-            border-bottom: 1px solid #222;
-        }
-        header h1 {
-            font-size: 18px;
-            font-weight: 500;
-            color: #00ecff;
-        }
-        .video-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            padding: 16px;
-            flex: 1;
-        }
-        .video-panel {
-            background: #151515;
-            border: 1px solid #2a2a2a;
-            border-radius: 8px;
-            overflow: hidden;
+
+        /* ===== HEADER ===== */
+        .header {
+            height: var(--header-height);
+            min-height: var(--header-height);
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border-subtle);
             display: flex;
-            flex-direction: column;
-        }
-        .video-panel.active {
-            border-color: #00ecff;
-            box-shadow: 0 0 12px rgba(0, 236, 255, 0.2);
-        }
-        .panel-header {
-            padding: 10px 14px;
-            background: #1a1a1a;
-            border-bottom: 1px solid #2a2a2a;
-            display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
+            padding: 0 20px;
+            z-index: 10;
         }
-        .panel-header h3 {
-            font-size: 13px;
-            font-weight: 600;
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-logo {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            color: var(--text-muted);
         }
-        .panel-header .status {
-            font-size: 11px;
-            color: #666;
-        }
-        .video-container {
-            flex: 1;
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 200px;
-            position: relative;
-        }
-        .video-container video {
-            max-width: 100%;
-            max-height: 100%;
-        }
-        .video-placeholder {
-            color: #444;
+
+        .header-story-id {
             font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
         }
-        .timeline-section {
-            background: #111;
-            border-top: 1px solid #222;
-            padding: 16px 24px;
+
+        .header-story-id span {
+            color: var(--accent);
         }
-        .timeline-controls {
+
+        .method-tabs {
             display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 12px;
-        }
-        .play-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #00ecff;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-        }
-        .play-btn:hover {
-            background: #00d4e6;
-        }
-        .play-btn svg {
-            fill: #000;
-            width: 16px;
-            height: 16px;
-        }
-        .time-display {
-            font-family: 'SF Mono', Monaco, monospace;
-            font-size: 13px;
-            color: #888;
-            min-width: 120px;
-        }
-        .timeline-track {
-            height: 48px;
-            background: #1a1a1a;
+            gap: 2px;
+            background: var(--bg-body);
             border-radius: 6px;
-            position: relative;
-            overflow: hidden;
+            padding: 3px;
         }
-        .timeline-progress {
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 0%;
-            background: linear-gradient(90deg, rgba(0,236,255,0.3), rgba(0,236,255,0.1));
-            border-right: 2px solid #00ecff;
-            transition: width 0.1s linear;
-        }
-        .timeline-scenes {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+
+        .method-tab {
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
             display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            text-transform: capitalize;
         }
-        .scene-block {
+
+        .method-tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-surface);
+        }
+
+        .method-tab.active {
+            color: var(--bg-body);
+            background: var(--accent);
+        }
+
+        .method-tab .badge {
+            font-size: 10px;
+            font-weight: 700;
+            background: rgba(255,255,255,0.15);
+            padding: 1px 5px;
+            border-radius: 8px;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .method-tab.active .badge {
+            background: rgba(0,0,0,0.25);
+        }
+
+        /* ===== MAIN AREA ===== */
+        .main-area {
             flex: 1;
-            border-right: 1px solid #333;
+            display: flex;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        /* ===== VIDEO PLAYER ===== */
+        .player-area {
+            flex: 1;
+            background: #000000;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            min-width: 0;
+        }
+
+        .player-area video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .player-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .player-message {
+            color: var(--text-muted);
+            font-size: 15px;
+            font-weight: 500;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .player-message .icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+            opacity: 0.4;
+        }
+
+        .player-error {
+            color: #ff5555;
+        }
+
+        .player-error .icon {
+            color: #ff5555;
+        }
+
+        .scene-counter {
+            position: absolute;
+            top: 12px;
+            left: 16px;
             font-size: 11px;
-            color: #555;
-            cursor: pointer;
-            transition: background 0.2s;
+            font-weight: 600;
+            color: rgba(255,255,255,0.5);
+            background: rgba(0,0,0,0.6);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            pointer-events: none;
+            backdrop-filter: blur(8px);
         }
-        .scene-block:hover {
-            background: rgba(255,255,255,0.05);
+
+        /* ===== INSPECTOR ===== */
+        .inspector {
+            width: var(--inspector-width);
+            min-width: var(--inspector-width);
+            background: var(--bg-panel);
+            border-left: 1px solid var(--border-subtle);
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
         }
-        .scene-block:last-child {
-            border-right: none;
+
+        .inspector::-webkit-scrollbar {
+            width: 6px;
         }
-        .speed-control {
+        .inspector::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .inspector::-webkit-scrollbar-thumb {
+            background: var(--border-medium);
+            border-radius: 3px;
+        }
+
+        .inspector-header {
+            padding: 16px 18px 12px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .inspector-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .inspector-body {
+            padding: 0;
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .inspector-section {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .inspector-section:last-child {
+            border-bottom: none;
+        }
+
+        .inspector-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .inspector-value {
+            font-size: 13px;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .inspector-value.mono {
+            font-family: var(--font-mono);
+            font-size: 12px;
+        }
+
+        .inspector-value.muted {
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-family: var(--font-mono);
+            word-break: break-all;
+        }
+
+        .scene-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--accent);
+            background: var(--accent-dim);
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 236, 255, 0.25);
+        }
+
+        .workflow-box {
+            display: inline-block;
+            font-size: 12px;
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-medium);
+            padding: 3px 10px;
+            border-radius: 4px;
+            background: var(--bg-elevated);
+        }
+
+        .audio-status {
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-left: auto;
+            font-size: 13px;
         }
-        .speed-control label {
+
+        .audio-status .indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .audio-status .indicator.present {
+            background: #4caf50;
+            box-shadow: 0 0 6px rgba(76, 175, 80, 0.5);
+        }
+
+        .audio-status .indicator.absent {
+            background: #666;
+        }
+
+        .prompt-text {
             font-size: 12px;
-            color: #666;
-        }
-        .speed-control select {
-            background: #222;
-            border: 1px solid #333;
-            color: #fff;
-            padding: 4px 8px;
+            color: var(--text-secondary);
+            line-height: 1.65;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px 12px;
+            background: var(--bg-body);
             border-radius: 4px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .prompt-text::-webkit-scrollbar {
+            width: 4px;
+        }
+        .prompt-text::-webkit-scrollbar-thumb {
+            background: var(--border-medium);
+            border-radius: 2px;
+        }
+
+        .keyframe-thumb {
+            width: 100%;
+            border-radius: 4px;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-body);
+            display: block;
+        }
+
+        .inspector-empty {
+            padding: 40px 18px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* ===== COLLAPSIBLE INSPECTOR SECTIONS ===== */
+        .inspector-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: 10px 18px;
+            border-bottom: 1px solid var(--border-subtle);
+            user-select: none;
+            transition: background 0.12s;
+        }
+
+        .inspector-section-header:hover {
+            background: rgba(255,255,255,0.02);
+        }
+
+        .inspector-section-header .section-title {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .inspector-section-header .section-arrow {
+            font-size: 10px;
+            color: var(--text-muted);
+            transition: transform 0.2s;
+            font-family: var(--font-mono);
+            line-height: 1;
+        }
+
+        .inspector-section-header.collapsed .section-arrow {
+            transform: rotate(-90deg);
+        }
+
+        .inspector-section-content {
+            padding: 10px 18px 14px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .inspector-section-content.collapsed {
+            display: none;
+        }
+
+        .inspector-section-content .field {
+            margin-bottom: 10px;
+        }
+
+        .inspector-section-content .field:last-child {
+            margin-bottom: 0;
+        }
+
+        .inspector-section-content .field-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+        }
+
+        .inspector-section-content .field-value {
+            font-size: 13px;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .inspector-section-content .field-value.mono {
+            font-family: var(--font-mono);
             font-size: 12px;
+        }
+
+        .inspector-section-content .field-value.muted {
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-family: var(--font-mono);
+            word-break: break-all;
+        }
+
+        /* Pills / tags */
+        .pill {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-right: 4px;
+            margin-bottom: 4px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-medium);
+            color: var(--text-secondary);
+        }
+
+        .pill.emotional {
+            background: rgba(180, 100, 255, 0.12);
+            border-color: rgba(180, 100, 255, 0.3);
+            color: #c89eff;
+        }
+
+        .pill.density-none { background: rgba(100,100,100,0.12); border-color: rgba(100,100,100,0.25); color: #888; }
+        .pill.density-sparse { background: rgba(100,200,100,0.12); border-color: rgba(100,200,100,0.25); color: #8dce8d; }
+        .pill.density-moderate { background: rgba(255,200,60,0.12); border-color: rgba(255,200,60,0.25); color: #e0c040; }
+        .pill.density-dense { background: rgba(255,120,80,0.12); border-color: rgba(255,120,80,0.25); color: #ff9070; }
+
+        /* Bullet list in inspector */
+        .inspector-bullet-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .inspector-bullet-list li {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            padding-left: 12px;
+            position: relative;
+        }
+
+        .inspector-bullet-list li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        /* Character state key-value pairs */
+        .char-state-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 4px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .char-state-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .char-state-name {
+            color: var(--accent);
+            font-weight: 600;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .char-state-desc {
+            color: var(--text-secondary);
+        }
+
+        /* ===== STORY BANNER ===== */
+        .story-banner {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 6px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            min-height: 32px;
+            flex-wrap: wrap;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .story-banner:hover {
+            background: var(--bg-elevated);
+        }
+
+        .story-banner.hidden {
+            display: none;
+        }
+
+        .story-banner-title {
+            font-weight: 700;
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+
+        .story-banner-sep {
+            color: var(--text-muted);
+        }
+
+        .story-banner-genre {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .story-banner-logline {
+            color: var(--text-secondary);
+            font-size: 12px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .story-banner-expanded {
+            display: none;
+            width: 100%;
+            padding-top: 4px;
+        }
+
+        .story-banner.expanded .story-banner-logline {
+            white-space: normal;
+        }
+
+        .story-banner.expanded .story-banner-expanded {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: flex-start;
+        }
+
+        .story-assets-row {
+            width: 100%;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 6px 0 2px;
+        }
+
+        .story-assets-row::-webkit-scrollbar { height: 4px; }
+        .story-assets-row::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 2px; }
+
+        .story-asset-thumb {
+            flex-shrink: 0;
+            width: 100px;
+            border-radius: 4px;
+            border: 1px solid var(--border-subtle);
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+
+        .story-asset-thumb:hover {
+            border-color: var(--accent);
+        }
+
+        .story-asset-card {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .story-asset-label {
+            font-size: 9px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            max-width: 100px;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .story-banner-expand-hint {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .story-banner .pill {
+            font-size: 10px;
+            padding: 1px 6px;
+            margin: 0;
+        }
+
+        /* ===== TIMELINE ===== */
+        .timeline-area {
+            height: var(--timeline-height);
+            min-height: var(--timeline-height);
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Transport bar */
+        .transport-bar {
+            height: 40px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-subtle);
+            background: var(--bg-surface);
+        }
+
+        .transport-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.12s;
+        }
+
+        .transport-btn:hover {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+
+        .transport-btn.play-pause {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            color: var(--bg-body);
+            border-radius: 50%;
+        }
+
+        .transport-btn.play-pause:hover {
+            background: #00d4e6;
+            color: var(--bg-body);
+        }
+
+        .transport-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+
+        .transport-btn.play-pause svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        .transport-time {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-secondary);
+            min-width: 100px;
+        }
+
+        .transport-time .current {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .transport-scene-info {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-left: 8px;
+        }
+
+        .transport-spacer {
+            flex: 1;
+        }
+
+        .speed-selector {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .speed-btn {
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.12s;
+        }
+
+        .speed-btn:hover {
+            color: var(--text-secondary);
+            border-color: var(--border-medium);
+        }
+
+        .speed-btn.active {
+            color: var(--accent);
+            border-color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        /* Timeline strip */
+        .timeline-strip-wrapper {
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 6px 16px 10px;
+            position: relative;
+        }
+
+        .timeline-strip-wrapper::-webkit-scrollbar {
+            height: 4px;
+        }
+        .timeline-strip-wrapper::-webkit-scrollbar-thumb {
+            background: var(--border-medium);
+            border-radius: 2px;
+        }
+
+        .timeline-strip {
+            display: flex;
+            gap: 8px;
+            height: 100%;
+            min-width: max-content;
+            position: relative;
+        }
+
+        .chapter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .chapter-label {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            padding: 0 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chapter-scenes {
+            display: flex;
+            gap: 2px;
+            flex: 1;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .scene-block {
+            min-width: 48px;
+            padding: 0 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.12s;
+            position: relative;
+            border: 1px solid transparent;
+            border-radius: 3px;
+        }
+
+        .scene-block:hover {
+            color: var(--text-secondary);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .scene-block.active {
+            color: var(--accent);
+            border-color: var(--accent);
+            background: var(--accent-dim);
+            box-shadow: 0 0 8px rgba(0, 236, 255, 0.15);
+        }
+
+        .scene-block.played {
+            opacity: 0.7;
+        }
+
+        .scene-block.error-scene {
+            border-color: #ff5555;
+            color: #ff5555;
+        }
+
+        /* Chapter color tints */
+        .chapter-tint-0 { background: rgba(0, 236, 255, 0.04); }
+        .chapter-tint-1 { background: rgba(255, 180, 0, 0.04); }
+        .chapter-tint-2 { background: rgba(180, 100, 255, 0.04); }
+        .chapter-tint-3 { background: rgba(100, 255, 150, 0.04); }
+        .chapter-tint-4 { background: rgba(255, 100, 130, 0.04); }
+
+        .scene-block.chapter-tint-0 { background: rgba(0, 236, 255, 0.06); }
+        .scene-block.chapter-tint-1 { background: rgba(255, 180, 0, 0.06); }
+        .scene-block.chapter-tint-2 { background: rgba(180, 100, 255, 0.06); }
+        .scene-block.chapter-tint-3 { background: rgba(100, 255, 150, 0.06); }
+        .scene-block.chapter-tint-4 { background: rgba(255, 100, 130, 0.06); }
+
+        .scene-block.active.chapter-tint-0,
+        .scene-block.active.chapter-tint-1,
+        .scene-block.active.chapter-tint-2,
+        .scene-block.active.chapter-tint-3,
+        .scene-block.active.chapter-tint-4 {
+            background: var(--accent-dim);
+        }
+
+        /* Loading state */
+        .loading-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-body);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .loading-screen .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border-medium);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .loading-screen .loading-text {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* No-clips state */
+        .no-clips {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+
+        .no-clips-message {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .no-clips-message .icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+            opacity: 0.3;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Story Stitch Player</h1>
-    </header>
 
-    <div class="video-grid">
-        <div class="video-panel active" data-method="next_scene">
-            <div class="panel-header">
-                <h3>NextScene</h3>
-                <span class="status">0 / 0 scenes</span>
-            </div>
-            <div class="video-container">
-                <video muted></video>
-                <span class="video-placeholder">No video loaded</span>
-            </div>
-        </div>
+<div class="loading-screen" id="loadingScreen">
+    <div class="spinner"></div>
+    <div class="loading-text">Loading story data...</div>
+</div>
 
-        <div class="video-panel" data-method="ltx2">
-            <div class="panel-header">
-                <h3>LTX2</h3>
-                <span class="status">0 / 0 scenes</span>
-            </div>
-            <div class="video-container">
-                <video muted></video>
-                <span class="video-placeholder">No video loaded</span>
-            </div>
-        </div>
+<!-- HEADER -->
+<div class="header" id="header">
+    <div class="header-left">
+        <div class="header-logo">STORY</div>
+        <div class="header-story-id" id="storyId">--</div>
+    </div>
+    <div class="method-tabs" id="methodTabs"></div>
+</div>
 
-        <div class="video-panel" data-method="infinity_talk">
-            <div class="panel-header">
-                <h3>InfinityTalk</h3>
-                <span class="status">0 / 0 scenes</span>
-            </div>
-            <div class="video-container">
-                <video muted></video>
-                <span class="video-placeholder">No video loaded</span>
-            </div>
-        </div>
+<!-- STORY BANNER -->
+<div class="story-banner hidden" id="storyBanner"></div>
 
-        <div class="video-panel" data-method="wan_i2v">
-            <div class="panel-header">
-                <h3>Wan I2V</h3>
-                <span class="status">0 / 0 scenes</span>
-            </div>
-            <div class="video-container">
-                <video muted></video>
-                <span class="video-placeholder">No video loaded</span>
-            </div>
+<!-- MAIN AREA: Player + Inspector -->
+<div class="main-area" id="mainArea">
+    <div class="player-area" id="playerArea">
+        <video id="videoEl" muted playsinline></video>
+        <div class="scene-counter" id="sceneCounter"></div>
+        <div class="player-overlay" id="playerOverlay">
+            <div class="player-message" id="playerMessage"></div>
         </div>
     </div>
-
-    <div class="timeline-section">
-        <div class="timeline-controls">
-            <button class="play-btn" id="playBtn">
-                <svg viewBox="0 0 24 24" id="playIcon"><polygon points="5,3 19,12 5,21"></polygon></svg>
-            </button>
-            <span class="time-display" id="timeDisplay">00:00 / 00:00</span>
-            <div class="speed-control">
-                <label>Speed:</label>
-                <select id="speedSelect">
-                    <option value="0.5">0.5x</option>
-                    <option value="1" selected>1x</option>
-                    <option value="1.5">1.5x</option>
-                    <option value="2">2x</option>
-                </select>
-            </div>
+    <div class="inspector" id="inspector">
+        <div class="inspector-header">
+            <div class="inspector-title">Inspector</div>
         </div>
-        <div class="timeline-track" id="timeline">
-            <div class="timeline-progress" id="progress"></div>
-            <div class="timeline-scenes" id="sceneBlocks"></div>
+        <div class="inspector-body" id="inspectorBody">
+            <div class="inspector-empty">Select a scene to inspect</div>
         </div>
     </div>
+</div>
 
-    <script>
-        // Sample data structure - replace with actual data from your JSON
-        let storyData = {
-            story_id: "preview",
-            total_duration: 60,
-            scenes: [
-                { id: 1, start: 0, duration: 10, label: "Scene 1" },
-                { id: 2, start: 10, duration: 15, label: "Scene 2" },
-                { id: 3, start: 25, duration: 20, label: "Scene 3" },
-                { id: 4, start: 45, duration: 15, label: "Scene 4" }
-            ],
-            methods: {
-                next_scene: [],
-                ltx2: [],
-                infinity_talk: [],
-                wan_i2v: []
+<!-- TIMELINE -->
+<div class="timeline-area" id="timelineArea">
+    <div class="transport-bar">
+        <button class="transport-btn" id="btnPrev" title="Previous scene">
+            <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+        </button>
+        <button class="transport-btn play-pause" id="btnPlayPause" title="Play / Pause">
+            <svg viewBox="0 0 24 24" id="iconPlayPause"><polygon points="5,3 19,12 5,21"/></svg>
+        </button>
+        <button class="transport-btn" id="btnNext" title="Next scene">
+            <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+        </button>
+        <div class="transport-time" id="transportTime">
+            <span class="current">00:00</span> / <span id="clipDuration">00:00</span>
+        </div>
+        <div class="transport-scene-info" id="transportSceneInfo"></div>
+        <div class="transport-spacer"></div>
+        <div class="speed-selector" id="speedSelector">
+            <button class="speed-btn" data-speed="0.5">0.5x</button>
+            <button class="speed-btn active" data-speed="1">1x</button>
+            <button class="speed-btn" data-speed="1.5">1.5x</button>
+            <button class="speed-btn" data-speed="2">2x</button>
+        </div>
+    </div>
+    <div class="timeline-strip-wrapper" id="timelineStripWrapper">
+        <div class="timeline-strip" id="timelineStrip"></div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    // ===== STATE =====
+    let storyData = null;
+    let activeMethod = null;
+    let scenes = [];
+    let currentSceneIdx = -1;
+    let isPlaying = false;
+    let playbackRate = 1;
+    let durations = [];         // cached durations per scene index
+    let errorScenes = new Set(); // scene indices that failed to load
+
+    // ===== DOM REFS =====
+    const loadingScreen = document.getElementById('loadingScreen');
+    const storyBannerEl = document.getElementById('storyBanner');
+    const storyIdEl = document.getElementById('storyId');
+    const methodTabsEl = document.getElementById('methodTabs');
+    const videoEl = document.getElementById('videoEl');
+    const playerArea = document.getElementById('playerArea');
+    const playerOverlay = document.getElementById('playerOverlay');
+    const playerMessage = document.getElementById('playerMessage');
+    const sceneCounter = document.getElementById('sceneCounter');
+    const inspectorBody = document.getElementById('inspectorBody');
+    const btnPlayPause = document.getElementById('btnPlayPause');
+    const iconPlayPause = document.getElementById('iconPlayPause');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const transportTime = document.getElementById('transportTime');
+    const clipDurationEl = document.getElementById('clipDuration');
+    const transportSceneInfo = document.getElementById('transportSceneInfo');
+    const speedSelector = document.getElementById('speedSelector');
+    const timelineStrip = document.getElementById('timelineStrip');
+    const timelineStripWrapper = document.getElementById('timelineStripWrapper');
+
+    // ===== UTILITIES =====
+    function fmt(sec) {
+        if (!sec || !isFinite(sec)) return '00:00';
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    function escHtml(str) {
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+
+    // ===== DATA LOADING =====
+    async function init() {
+        try {
+            const resp = await fetch('remotion_input.json');
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            storyData = await resp.json();
+        } catch (e) {
+            loadingScreen.querySelector('.loading-text').textContent =
+                'Failed to load remotion_input.json: ' + e.message;
+            loadingScreen.querySelector('.spinner').style.display = 'none';
+            return;
+        }
+
+        loadingScreen.style.display = 'none';
+        renderHeader();
+        renderStoryBanner();
+
+        // Activate the first method that has scenes
+        const methods = Object.keys(storyData.methods || {});
+        if (methods.length === 0) {
+            showPlayerMessage('No methods found in data', false);
+            return;
+        }
+
+        // Pick first method with clips, or just first method
+        const firstWithClips = methods.find(m => storyData.methods[m].length > 0) || methods[0];
+        switchMethod(firstWithClips);
+    }
+
+    // ===== HEADER =====
+    function renderHeader() {
+        storyIdEl.innerHTML = '<span>' + escHtml(storyData.story_id || 'untitled') + '</span>';
+
+        methodTabsEl.innerHTML = '';
+        const methods = Object.keys(storyData.methods || {});
+        methods.forEach(method => {
+            const count = storyData.methods[method].length;
+            const btn = document.createElement('button');
+            btn.className = 'method-tab';
+            btn.dataset.method = method;
+            btn.innerHTML = escHtml(method) + ' <span class="badge">' + count + '</span>';
+            btn.addEventListener('click', () => switchMethod(method));
+            methodTabsEl.appendChild(btn);
+        });
+    }
+
+    function updateMethodTabs() {
+        methodTabsEl.querySelectorAll('.method-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.method === activeMethod);
+        });
+    }
+
+    // ===== METHOD SWITCHING =====
+    function switchMethod(method) {
+        activeMethod = method;
+        scenes = (storyData.methods[method] || []).slice();
+        durations = new Array(scenes.length).fill(null);
+        errorScenes.clear();
+        currentSceneIdx = -1;
+
+        updateMethodTabs();
+        renderTimeline();
+
+        if (scenes.length === 0) {
+            showPlayerMessage('No clips for this method', false);
+            sceneCounter.textContent = '';
+            renderInspectorEmpty();
+            updateTransport();
+            return;
+        }
+
+        loadScene(0);
+    }
+
+    // ===== VIDEO PLAYBACK =====
+    function loadScene(idx) {
+        if (idx < 0 || idx >= scenes.length) return;
+
+        const wasPlaying = isPlaying;
+        pauseVideo();
+
+        currentSceneIdx = idx;
+        const scene = scenes[idx];
+
+        // Reset video
+        videoEl.removeAttribute('src');
+        videoEl.load();
+
+        hidePlayerMessage();
+        sceneCounter.textContent = 'Scene ' + (idx + 1) + ' of ' + scenes.length;
+
+        videoEl.src = scene.video_file;
+        videoEl.playbackRate = playbackRate;
+        videoEl.load();
+
+        updateInspector(scene);
+        updateTimelineHighlight();
+        updateTransport();
+        scrollTimelineToActive();
+
+        if (wasPlaying) {
+            playVideo();
+        }
+    }
+
+    function playVideo() {
+        if (scenes.length === 0) return;
+        if (errorScenes.has(currentSceneIdx)) {
+            // Skip to next playable scene
+            advanceToNext();
+            return;
+        }
+        const p = videoEl.play();
+        if (p && p.catch) p.catch(() => {}); // suppress AbortError
+        isPlaying = true;
+        updatePlayPauseIcon();
+    }
+
+    function pauseVideo() {
+        videoEl.pause();
+        isPlaying = false;
+        updatePlayPauseIcon();
+    }
+
+    function togglePlayPause() {
+        if (isPlaying) {
+            pauseVideo();
+        } else {
+            playVideo();
+        }
+    }
+
+    function advanceToNext() {
+        if (currentSceneIdx < scenes.length - 1) {
+            loadScene(currentSceneIdx + 1);
+            if (isPlaying || true) { // auto-advance always plays
+                playVideo();
             }
-        };
+        } else {
+            // Reached the end
+            pauseVideo();
+        }
+    }
 
-        let isPlaying = false;
-        let currentTime = 0;
-        let playbackSpeed = 1;
-        let animationFrame = null;
-        let lastTimestamp = null;
+    function goToPrev() {
+        if (currentSceneIdx > 0) {
+            loadScene(currentSceneIdx - 1);
+        }
+    }
 
-        const playBtn = document.getElementById('playBtn');
-        const playIcon = document.getElementById('playIcon');
-        const timeDisplay = document.getElementById('timeDisplay');
-        const progress = document.getElementById('progress');
-        const sceneBlocks = document.getElementById('sceneBlocks');
-        const timeline = document.getElementById('timeline');
-        const speedSelect = document.getElementById('speedSelect');
+    function goToNext() {
+        if (currentSceneIdx < scenes.length - 1) {
+            loadScene(currentSceneIdx + 1);
+        }
+    }
 
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    function updatePlayPauseIcon() {
+        if (isPlaying) {
+            iconPlayPause.innerHTML = '<rect x="5" y="3" width="4" height="18" rx="1"/><rect x="15" y="3" width="4" height="18" rx="1"/>';
+        } else {
+            iconPlayPause.innerHTML = '<polygon points="5,3 19,12 5,21"/>';
+        }
+    }
+
+    // ===== VIDEO EVENTS =====
+    videoEl.addEventListener('ended', () => {
+        advanceToNext();
+    });
+
+    videoEl.addEventListener('loadedmetadata', () => {
+        durations[currentSceneIdx] = videoEl.duration;
+        updateTransport();
+    });
+
+    videoEl.addEventListener('timeupdate', () => {
+        updateTransport();
+    });
+
+    videoEl.addEventListener('error', () => {
+        errorScenes.add(currentSceneIdx);
+        showPlayerMessage(
+            'Failed to load video:<br><span style="font-size:11px;color:#777">' +
+            escHtml(scenes[currentSceneIdx]?.video_file || 'unknown') + '</span>',
+            true
+        );
+        updateTimelineHighlight();
+
+        // If was in auto-play, skip to next after a beat
+        if (isPlaying) {
+            setTimeout(() => advanceToNext(), 800);
+        }
+    });
+
+    videoEl.addEventListener('canplay', () => {
+        hidePlayerMessage();
+    });
+
+    // ===== PLAYER MESSAGES =====
+    function showPlayerMessage(html, isError) {
+        playerMessage.className = 'player-message' + (isError ? ' player-error' : '');
+        playerMessage.innerHTML = html;
+        playerOverlay.style.display = 'flex';
+        videoEl.style.visibility = 'hidden';
+    }
+
+    function hidePlayerMessage() {
+        playerOverlay.style.display = 'none';
+        videoEl.style.visibility = 'visible';
+    }
+
+    // ===== STORY BANNER =====
+    function renderStoryBanner() {
+        const meta = storyData && storyData.story_meta;
+        const source = storyData && storyData.source;
+        const job = storyData && storyData.job;
+        if (!meta && !source && !job) {
+            storyBannerEl.classList.add('hidden');
+            return;
         }
 
-        function updateUI() {
-            const pct = (currentTime / storyData.total_duration) * 100;
-            progress.style.width = pct + '%';
-            timeDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(storyData.total_duration)}`;
+        let html = '';
+        // Title line
+        if (meta && meta.title) {
+            html += '<span class="story-banner-title">' + escHtml('"' + meta.title + '"') + '</span>';
         }
+        if (meta && meta.genre) {
+            html += '<span class="story-banner-sep">&mdash;</span>';
+            html += '<span class="story-banner-genre">' + escHtml(meta.genre) + '</span>';
+        }
+        if (job && job.job_id) {
+            html += '<span class="story-banner-sep">|</span>';
+            html += '<span style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);">' + escHtml(job.job_id) + '</span>';
+        }
+        if (job && job.workflow) {
+            html += '<span class="pill" style="margin-left:6px;font-size:10px;">' + escHtml(job.workflow) + '</span>';
+        }
+        if (meta && meta.visual_style) {
+            html += '<span class="story-banner-sep">|</span>';
+            html += '<span class="story-banner-logline">' + escHtml(meta.visual_style) + '</span>';
+        } else if (meta && meta.logline) {
+            html += '<span class="story-banner-sep">|</span>';
+            html += '<span class="story-banner-logline">' + escHtml(meta.logline) + '</span>';
+        }
+        html += '<span class="story-banner-expand-hint">click to expand</span>';
 
-        function renderSceneBlocks() {
-            sceneBlocks.innerHTML = '';
-            storyData.scenes.forEach(scene => {
-                const block = document.createElement('div');
-                block.className = 'scene-block';
-                block.textContent = scene.label;
-                block.style.flex = scene.duration;
-                block.onclick = () => seekTo(scene.start);
-                sceneBlocks.appendChild(block);
+        // Expanded section
+        let expandedHtml = '';
+        // Logline (if visual_style shown above)
+        if (meta && meta.visual_style && meta.logline) {
+            expandedHtml += '<div style="width:100%;font-size:12px;color:var(--text-secondary);margin-bottom:8px;line-height:1.5;">' + escHtml(meta.logline) + '</div>';
+        }
+        // Source (reddit post)
+        if (source) {
+            expandedHtml += '<div style="width:100%;margin-bottom:8px;">';
+            expandedHtml += '<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:4px;">Source</div>';
+            if (source.title) {
+                expandedHtml += '<div style="font-size:12px;color:var(--text-primary);font-weight:500;margin-bottom:4px;">' + escHtml(source.title) + '</div>';
+            }
+            if (source.content) {
+                const truncated = source.content.length > 400 ? source.content.slice(0, 400) + '...' : source.content;
+                expandedHtml += '<div style="font-size:11px;color:var(--text-secondary);line-height:1.5;max-height:100px;overflow-y:auto;background:rgba(255,255,255,0.03);padding:8px;border-radius:4px;border:1px solid var(--border-subtle);">' + escHtml(truncated) + '</div>';
+            }
+            if (source.url) {
+                expandedHtml += '<a href="' + escHtml(source.url) + '" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;display:inline-block;margin-top:4px;">View original post &rarr;</a>';
+            }
+            expandedHtml += '</div>';
+        }
+        // Tags
+        const allTags = [].concat((meta && meta.thematic_tags) || [], (meta && meta.cinema_style_tags) || []);
+        if (allTags.length > 0) {
+            expandedHtml += '<div style="width:100%;display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;">';
+            allTags.forEach(tag => {
+                expandedHtml += '<span class="pill">' + escHtml(tag) + '</span>';
             });
+            expandedHtml += '</div>';
+        }
+        // Story assets (character sheets, mood board, key visual)
+        const storyAssets = storyData && storyData.story_assets;
+        if (storyAssets && storyAssets.length > 0) {
+            expandedHtml += '<div style="width:100%;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin:4px 0 2px;">Story Assets</div>';
+            expandedHtml += '<div class="story-assets-row">';
+            storyAssets.forEach(a => {
+                expandedHtml += '<div class="story-asset-card">';
+                expandedHtml += '<img class="story-asset-thumb" src="' + escHtml(a.file) + '" alt="' + escHtml(a.label) + '" onerror="this.parentElement.style.display=\'none\'" onclick="window.open(\'' + escHtml(a.file) + '\',\'_blank\')" />';
+                expandedHtml += '<span class="story-asset-label">' + escHtml(a.label) + '</span>';
+                expandedHtml += '</div>';
+            });
+            expandedHtml += '</div>';
+        }
+        if (expandedHtml) {
+            html += '<div class="story-banner-expanded">' + expandedHtml + '</div>';
         }
 
-        function seekTo(time) {
-            currentTime = time;
-            updateUI();
+        storyBannerEl.innerHTML = html;
+        storyBannerEl.classList.remove('hidden');
+
+        storyBannerEl.addEventListener('click', () => {
+            storyBannerEl.classList.toggle('expanded');
+            const hint = storyBannerEl.querySelector('.story-banner-expand-hint');
+            if (hint) {
+                hint.textContent = storyBannerEl.classList.contains('expanded') ? 'click to collapse' : 'click to expand';
+            }
+        });
+    }
+
+    // ===== INSPECTOR =====
+    // Track collapsed state across scene switches
+    const sectionCollapsed = {
+        scene: false,
+        narrative: false,
+        chapter_context: false,
+        direction: true,
+        pipeline: true,
+        assets: true,
+    };
+
+    function renderInspectorEmpty() {
+        inspectorBody.innerHTML = '<div class="inspector-empty">No scene selected</div>';
+    }
+
+    function buildCollapsibleSection(key, title, contentHtml) {
+        // Returns empty string if contentHtml is empty/falsy
+        if (!contentHtml || contentHtml.trim() === '') return '';
+
+        const isCollapsed = sectionCollapsed[key];
+        const collClass = isCollapsed ? ' collapsed' : '';
+        let html = '';
+        html += '<div class="inspector-section-header' + collClass + '" data-section="' + key + '">';
+        html += '<span class="section-title">' + escHtml(title) + '</span>';
+        html += '<span class="section-arrow">&#9660;</span>';
+        html += '</div>';
+        html += '<div class="inspector-section-content' + collClass + '" data-section-content="' + key + '">';
+        html += contentHtml;
+        html += '</div>';
+        return html;
+    }
+
+    function updateInspector(scene) {
+        let html = '';
+
+        // === SCENE section (always-visible header area) ===
+        let sceneContent = '';
+        sceneContent += '<div class="field">';
+        sceneContent += '<div class="scene-badge">' + escHtml(scene.scene_index || '--') + '</div>';
+        sceneContent += '</div>';
+        sceneContent += '<div class="field">';
+        sceneContent += '<div class="field-label">Chapter</div>';
+        sceneContent += '<div class="field-value">' + escHtml(scene.chapter_name || '--') + '</div>';
+        sceneContent += '</div>';
+        sceneContent += '<div class="field">';
+        sceneContent += '<div class="field-label">Scene</div>';
+        sceneContent += '<div class="field-value mono">' + escHtml(scene.scene_name || '--') + '</div>';
+        sceneContent += '</div>';
+        html += buildCollapsibleSection('scene', 'Scene', sceneContent);
+
+        // === NARRATIVE section ===
+        let narrativeContent = '';
+        if (scene.narrative_beat) {
+            narrativeContent += '<div class="field">';
+            narrativeContent += '<div class="field-label">Narrative Beat</div>';
+            narrativeContent += '<div class="field-value">' + escHtml(scene.narrative_beat) + '</div>';
+            narrativeContent += '</div>';
+        }
+        if (scene.emotional_state) {
+            narrativeContent += '<div class="field">';
+            narrativeContent += '<div class="field-label">Emotional State</div>';
+            narrativeContent += '<span class="pill emotional">' + escHtml(scene.emotional_state) + '</span>';
+            narrativeContent += '</div>';
+        }
+        if (scene.dialogue_density) {
+            const densityClass = 'density-' + (scene.dialogue_density || 'none').toLowerCase();
+            narrativeContent += '<div class="field">';
+            narrativeContent += '<div class="field-label">Dialogue Density</div>';
+            narrativeContent += '<span class="pill ' + densityClass + '">' + escHtml(scene.dialogue_density) + '</span>';
+            narrativeContent += '</div>';
+        }
+        html += buildCollapsibleSection('narrative', 'Narrative', narrativeContent);
+
+        // === DIRECTION section ===
+        let directionContent = '';
+        if (scene.visual_requirement) {
+            directionContent += '<div class="field">';
+            directionContent += '<div class="field-label">Visual Requirement</div>';
+            directionContent += '<div class="field-value">' + escHtml(scene.visual_requirement) + '</div>';
+            directionContent += '</div>';
+        }
+        if (scene.must_show && scene.must_show.length > 0) {
+            directionContent += '<div class="field">';
+            directionContent += '<div class="field-label">Must Show</div>';
+            directionContent += '<ul class="inspector-bullet-list">';
+            scene.must_show.forEach(item => {
+                directionContent += '<li>' + escHtml(item) + '</li>';
+            });
+            directionContent += '</ul>';
+            directionContent += '</div>';
+        }
+        if (scene.character_state && Object.keys(scene.character_state).length > 0) {
+            directionContent += '<div class="field">';
+            directionContent += '<div class="field-label">Character State</div>';
+            Object.entries(scene.character_state).forEach(([name, state]) => {
+                directionContent += '<div class="char-state-row">';
+                directionContent += '<span class="char-state-name">' + escHtml(name) + '</span>';
+                directionContent += '<span class="char-state-desc">' + escHtml(state) + '</span>';
+                directionContent += '</div>';
+            });
+            directionContent += '</div>';
+        }
+        html += buildCollapsibleSection('direction', 'Direction', directionContent);
+
+        // === PIPELINE section ===
+        let pipelineContent = '';
+        pipelineContent += '<div class="field">';
+        pipelineContent += '<div class="field-label">Workflow</div>';
+        pipelineContent += '<div class="workflow-box">' + escHtml(scene.workflow || scene.method || '--') + '</div>';
+        pipelineContent += '</div>';
+        pipelineContent += '<div class="field">';
+        pipelineContent += '<div class="field-label">Audio</div>';
+        if (scene.has_audio) {
+            pipelineContent += '<div class="audio-status"><span class="indicator present"></span> Audio present</div>';
+        } else {
+            pipelineContent += '<div class="audio-status"><span class="indicator absent"></span> No audio</div>';
+        }
+        pipelineContent += '</div>';
+        if (scene.prompt) {
+            pipelineContent += '<div class="field">';
+            pipelineContent += '<div class="field-label">Prompt</div>';
+            pipelineContent += '<div class="prompt-text">' + escHtml(scene.prompt) + '</div>';
+            pipelineContent += '</div>';
+        }
+        html += buildCollapsibleSection('pipeline', 'Pipeline', pipelineContent);
+
+        // === ASSETS section ===
+        let assetsContent = '';
+        if (scene.keyframe_file) {
+            assetsContent += '<div class="field">';
+            assetsContent += '<div class="field-label">Source Keyframe</div>';
+            assetsContent += '<img class="keyframe-thumb" src="' + escHtml(scene.keyframe_file) +
+                             '" alt="Keyframe" onerror="this.style.display=\'none\'" />';
+            assetsContent += '</div>';
+        }
+        assetsContent += '<div class="field">';
+        assetsContent += '<div class="field-label">File</div>';
+        assetsContent += '<div class="field-value muted">' + escHtml(scene.video_file || '--') + '</div>';
+        assetsContent += '</div>';
+        html += buildCollapsibleSection('assets', 'Assets', assetsContent);
+
+        // === CHAPTER CONTEXT section ===
+        let chapterContent = '';
+        // Chapter concept image
+        const chapterKey = scene.scene_index ? scene.scene_index.split('_')[0] : null;
+        const chapterAssets = storyData && storyData.chapter_assets && chapterKey ? storyData.chapter_assets[chapterKey] : null;
+        if (chapterAssets && chapterAssets.length > 0) {
+            chapterContent += '<div class="field">';
+            chapterContent += '<div class="field-label">Chapter Concept</div>';
+            chapterAssets.forEach(a => {
+                chapterContent += '<img class="keyframe-thumb" src="' + escHtml(a.file) + '" alt="' + escHtml(a.label) + '" onerror="this.style.display=\'none\'" style="cursor:pointer;" onclick="window.open(\'' + escHtml(a.file) + '\',\'_blank\')" />';
+            });
+            chapterContent += '</div>';
+        }
+        if (scene.chapter_intent) {
+            chapterContent += '<div class="field">';
+            chapterContent += '<div class="field-label">Intent</div>';
+            chapterContent += '<div class="field-value">' + escHtml(scene.chapter_intent) + '</div>';
+            chapterContent += '</div>';
+        }
+        if (scene.chapter_who) {
+            chapterContent += '<div class="field">';
+            chapterContent += '<div class="field-label">Who</div>';
+            chapterContent += '<div class="field-value">' + escHtml(scene.chapter_who) + '</div>';
+            chapterContent += '</div>';
+        }
+        if (scene.chapter_where) {
+            chapterContent += '<div class="field">';
+            chapterContent += '<div class="field-label">Where</div>';
+            chapterContent += '<div class="field-value">' + escHtml(scene.chapter_where) + '</div>';
+            chapterContent += '</div>';
+        }
+        if (scene.chapter_when) {
+            chapterContent += '<div class="field">';
+            chapterContent += '<div class="field-label">When</div>';
+            chapterContent += '<div class="field-value">' + escHtml(scene.chapter_when) + '</div>';
+            chapterContent += '</div>';
+        }
+        if (scene.chapter_what) {
+            chapterContent += '<div class="field">';
+            chapterContent += '<div class="field-label">What</div>';
+            chapterContent += '<div class="field-value">' + escHtml(scene.chapter_what) + '</div>';
+            chapterContent += '</div>';
+        }
+        html += buildCollapsibleSection('chapter_context', 'Chapter Context', chapterContent);
+
+        inspectorBody.innerHTML = html;
+
+        // Attach toggle listeners
+        inspectorBody.querySelectorAll('.inspector-section-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const key = header.dataset.section;
+                const content = inspectorBody.querySelector('[data-section-content="' + key + '"]');
+                const isNowCollapsed = !header.classList.contains('collapsed');
+                header.classList.toggle('collapsed', isNowCollapsed);
+                content.classList.toggle('collapsed', isNowCollapsed);
+                sectionCollapsed[key] = isNowCollapsed;
+            });
+        });
+    }
+
+    // ===== TRANSPORT =====
+    function updateTransport() {
+        const cur = videoEl.currentTime || 0;
+        const dur = videoEl.duration || 0;
+        transportTime.querySelector('.current').textContent = fmt(cur);
+        clipDurationEl.textContent = fmt(dur);
+
+        if (currentSceneIdx >= 0 && scenes.length > 0) {
+            transportSceneInfo.textContent = 'Scene ' + (currentSceneIdx + 1) + ' of ' + scenes.length;
+        } else {
+            transportSceneInfo.textContent = '';
+        }
+    }
+
+    // ===== SPEED =====
+    speedSelector.addEventListener('click', (e) => {
+        const btn = e.target.closest('.speed-btn');
+        if (!btn) return;
+        const speed = parseFloat(btn.dataset.speed);
+        playbackRate = speed;
+        videoEl.playbackRate = speed;
+        speedSelector.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    });
+
+    // ===== TIMELINE =====
+    const CHAPTER_TINTS = ['chapter-tint-0', 'chapter-tint-1', 'chapter-tint-2', 'chapter-tint-3', 'chapter-tint-4'];
+
+    function renderTimeline() {
+        timelineStrip.innerHTML = '';
+
+        if (scenes.length === 0) {
+            timelineStrip.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:20px 8px;">No clips</div>';
+            return;
         }
 
-        function togglePlay() {
-            isPlaying = !isPlaying;
-            if (isPlaying) {
-                playIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>';
-                lastTimestamp = performance.now();
-                animate();
-            } else {
-                playIcon.innerHTML = '<polygon points="5,3 19,12 5,21"></polygon>';
-                cancelAnimationFrame(animationFrame);
+        // Group scenes by chapter
+        const chapters = [];
+        const chapterMap = new Map();
+        scenes.forEach((scene, globalIdx) => {
+            const chKey = scene.chapter_name || 'Unknown';
+            if (!chapterMap.has(chKey)) {
+                const ch = { name: chKey, scenes: [], startIdx: globalIdx };
+                chapters.push(ch);
+                chapterMap.set(chKey, ch);
+            }
+            chapterMap.get(chKey).scenes.push({ scene, globalIdx });
+        });
+
+        chapters.forEach((ch, chIdx) => {
+            const groupEl = document.createElement('div');
+            groupEl.className = 'chapter-group';
+
+            const labelEl = document.createElement('div');
+            labelEl.className = 'chapter-label';
+            labelEl.textContent = 'Ch' + (chIdx + 1) + ' ' + ch.name;
+            labelEl.title = ch.name;
+            groupEl.appendChild(labelEl);
+
+            const scenesRow = document.createElement('div');
+            scenesRow.className = 'chapter-scenes';
+
+            const tintClass = CHAPTER_TINTS[chIdx % CHAPTER_TINTS.length];
+
+            ch.scenes.forEach(({ scene, globalIdx }) => {
+                const block = document.createElement('div');
+                block.className = 'scene-block ' + tintClass;
+                block.dataset.idx = globalIdx;
+
+                // Extract short scene label (e.g., "S0" from "scene_00")
+                const sName = scene.scene_name || '';
+                const shortLabel = sName.replace(/^scene_?/i, 'S').replace(/^S0*(\d+)/, 'S$1');
+                block.textContent = shortLabel || 'S' + globalIdx;
+                block.title = scene.scene_index + ' - ' + scene.chapter_name;
+
+                block.addEventListener('click', () => {
+                    loadScene(globalIdx);
+                    playVideo();
+                });
+
+                scenesRow.appendChild(block);
+            });
+
+            groupEl.appendChild(scenesRow);
+            timelineStrip.appendChild(groupEl);
+        });
+    }
+
+    function updateTimelineHighlight() {
+        timelineStrip.querySelectorAll('.scene-block').forEach(block => {
+            const idx = parseInt(block.dataset.idx);
+            block.classList.toggle('active', idx === currentSceneIdx);
+            block.classList.toggle('played', idx < currentSceneIdx);
+            block.classList.toggle('error-scene', errorScenes.has(idx));
+        });
+    }
+
+    function scrollTimelineToActive() {
+        const activeBlock = timelineStrip.querySelector('.scene-block.active');
+        if (activeBlock) {
+            const wrapper = timelineStripWrapper;
+            const blockRect = activeBlock.getBoundingClientRect();
+            const wrapperRect = wrapper.getBoundingClientRect();
+
+            if (blockRect.left < wrapperRect.left || blockRect.right > wrapperRect.right) {
+                activeBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
             }
         }
+    }
 
-        function animate(timestamp) {
-            if (!isPlaying) return;
+    // ===== TRANSPORT BUTTON EVENTS =====
+    btnPlayPause.addEventListener('click', togglePlayPause);
+    btnPrev.addEventListener('click', goToPrev);
+    btnNext.addEventListener('click', goToNext);
 
-            if (lastTimestamp) {
-                const delta = (timestamp - lastTimestamp) / 1000 * playbackSpeed;
-                currentTime += delta;
+    // ===== KEYBOARD SHORTCUTS =====
+    document.addEventListener('keydown', (e) => {
+        // Don't capture if user is focused on an input
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
-                if (currentTime >= storyData.total_duration) {
-                    currentTime = 0;
+        switch (e.key) {
+            case ' ':
+                e.preventDefault();
+                togglePlayPause();
+                break;
+            case 'ArrowRight':
+                if (e.shiftKey) {
+                    goToNext();
+                } else {
+                    // Seek forward 5s within clip
+                    videoEl.currentTime = Math.min(videoEl.currentTime + 5, videoEl.duration || 0);
                 }
-                updateUI();
-            }
-            lastTimestamp = timestamp;
-            animationFrame = requestAnimationFrame(animate);
-        }
-
-        // Event listeners
-        playBtn.onclick = togglePlay;
-        speedSelect.onchange = (e) => { playbackSpeed = parseFloat(e.target.value); };
-        timeline.onclick = (e) => {
-            const rect = timeline.getBoundingClientRect();
-            const pct = (e.clientX - rect.left) / rect.width;
-            seekTo(pct * storyData.total_duration);
-        };
-
-        // Load data from JSON file if available
-        async function loadStoryData() {
-            try {
-                const response = await fetch('story_data.json');
-                if (response.ok) {
-                    storyData = await response.json();
+                e.preventDefault();
+                break;
+            case 'ArrowLeft':
+                if (e.shiftKey) {
+                    goToPrev();
+                } else {
+                    // Seek back 5s within clip
+                    videoEl.currentTime = Math.max(videoEl.currentTime - 5, 0);
                 }
-            } catch (e) {
-                console.log('Using default story data');
-            }
-            renderSceneBlocks();
-            updateUI();
+                e.preventDefault();
+                break;
+            case 'j':
+            case 'J':
+                goToPrev();
+                break;
+            case 'k':
+            case 'K':
+                togglePlayPause();
+                break;
+            case 'l':
+            case 'L':
+                goToNext();
+                break;
         }
+    });
 
-        loadStoryData();
-    </script>
+    // ===== DOUBLE-CLICK TO FULLSCREEN =====
+    playerArea.addEventListener('dblclick', () => {
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        } else {
+            playerArea.requestFullscreen().catch(() => {});
+        }
+    });
+
+    // ===== START =====
+    init();
+})();
+</script>
 </body>
 </html>

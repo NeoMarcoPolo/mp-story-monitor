@@ -1,83 +1,116 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import {
     AbsoluteFill,
     Series,
     Video,
     staticFile,
-    delayRender,
-    continueRender,
+    useCurrentFrame,
 } from 'remotion';
-import { TimelinesInputProps } from './types';
+import { SceneBlock } from './types';
 
 const SCENE_DURATION_FRAMES = 120; // 4 seconds at 30 fps
 
-export const StitchComposition: React.FC<TimelinesInputProps> = (fallbackProps) => {
-    const [handle] = useState(() => delayRender());
-    const [data, setData] = useState<TimelinesInputProps | null>(null);
+// ─── Scene Label Overlay (minimal, top-left) ────────────────────────────────
 
-    const load = useCallback(async () => {
-        try {
-            const res = await fetch(staticFile('remotion_input.json'));
-            if (res.ok) {
-                const json: TimelinesInputProps = await res.json();
-                setData(json);
-            } else {
-                // Fall back to default props passed from Root.tsx
-                setData(fallbackProps);
-            }
-        } catch {
-            setData(fallbackProps);
-        }
-        continueRender(handle);
-    }, [handle, fallbackProps]);
+const SceneLabel: React.FC<{ scene: SceneBlock; sceneIdx: number; totalScenes: number }> = ({
+    scene,
+    sceneIdx,
+    totalScenes,
+}) => {
+    return (
+        <div
+            style={{
+                position: 'absolute',
+                top: '16px',
+                left: '16px',
+                zIndex: 2,
+                fontFamily: 'monospace',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                background: 'rgba(0,0,0,0.6)',
+                padding: '6px 14px',
+                borderRadius: '6px',
+            }}
+        >
+            <span style={{ color: '#00ecff', fontSize: '16px', fontWeight: 'bold' }}>
+                {scene.chapter_name
+                    ? `${scene.chapter_name} — ${scene.scene_name ?? `S${sceneIdx}`}`
+                    : scene.scene_index ?? `Scene ${sceneIdx + 1}`}
+            </span>
+            <span style={{ color: '#666', fontSize: '13px' }}>
+                {sceneIdx + 1}/{totalScenes}
+            </span>
+        </div>
+    );
+};
 
-    useEffect(() => {
-        load();
-    }, [load]);
+// ─── Main Composition ────────────────────────────────────────────────────────
 
-    if (!data) return null;
+export const StitchComposition: React.FC<{
+    method: string;
+    scenes: SceneBlock[];
+}> = ({ method, scenes }) => {
+    const frame = useCurrentFrame();
+    const totalFrames = scenes.length * SCENE_DURATION_FRAMES;
 
-    const { methods } = data;
-    const methodEntries = Object.entries(methods);
+    const clampedFrame = Math.min(frame, totalFrames > 0 ? totalFrames - 1 : 0);
+    const sceneIdx = Math.min(
+        Math.floor(clampedFrame / SCENE_DURATION_FRAMES),
+        Math.max(scenes.length - 1, 0),
+    );
+    const currentScene = scenes[sceneIdx];
 
-    if (methodEntries.length === 0) {
+    if (!currentScene) {
         return (
-            <AbsoluteFill style={{ backgroundColor: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <h1 style={{ color: '#888', fontFamily: 'monospace' }}>No methods found in remotion_input.json</h1>
+            <AbsoluteFill
+                style={{
+                    backgroundColor: '#000',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+            >
+                <h1 style={{ color: '#888', fontFamily: 'monospace' }}>
+                    No scenes for {method}
+                </h1>
             </AbsoluteFill>
         );
     }
 
     return (
-        <AbsoluteFill style={{ backgroundColor: '#111', display: 'flex', flexDirection: 'column' }}>
-            <h1 style={{ color: 'white', textAlign: 'center', fontFamily: 'monospace' }}>
-                Story Stitch Timeline — {data.story_id}
-            </h1>
-
-            <div style={{ display: 'flex', flex: 1, padding: '20px', gap: '20px' }}>
-                {methodEntries.map(([method, scenes]) => (
-                    <div key={method} style={{ flex: 1, border: '1px solid #333', background: '#222', padding: '10px' }}>
-                        <h2 style={{ color: '#00ecff', margin: 0, paddingBottom: '10px', textTransform: 'uppercase' }}>
-                            {method}
-                        </h2>
-                        <div style={{ height: '300px', width: '100%', position: 'relative' }}>
-                            <Series>
-                                {scenes.map((scene, idx) => (
-                                    <Series.Sequence key={idx} durationInFrames={SCENE_DURATION_FRAMES}>
-                                        <AbsoluteFill>
-                                            <Video
-                                                src={staticFile(scene.video_file)}
-                                                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                                            />
-                                        </AbsoluteFill>
-                                    </Series.Sequence>
-                                ))}
-                            </Series>
-                        </div>
-                        <div style={{ color: '#888', marginTop: '10px' }}>{scenes.length} Scenes</div>
-                    </div>
+        <AbsoluteFill style={{ backgroundColor: '#000' }}>
+            <Series>
+                {scenes.map((s, idx) => (
+                    <Series.Sequence
+                        key={`${method}-${idx}`}
+                        durationInFrames={SCENE_DURATION_FRAMES}
+                        name={
+                            s.scene_index
+                                ? `${s.scene_index}${s.chapter_name ? ` — ${s.chapter_name}` : ''}`
+                                : `Scene ${idx + 1}`
+                        }
+                    >
+                        <AbsoluteFill>
+                            <Video
+                                src={staticFile(s.video_file)}
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'contain',
+                                }}
+                            />
+                        </AbsoluteFill>
+                    </Series.Sequence>
                 ))}
-            </div>
+            </Series>
+
+            {/* Minimal label overlay */}
+            <SceneLabel
+                scene={currentScene}
+                sceneIdx={sceneIdx}
+                totalScenes={scenes.length}
+            />
         </AbsoluteFill>
     );
 };
