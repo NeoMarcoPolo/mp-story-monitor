@@ -181,6 +181,8 @@ class ProgressTracker:
 
     def start(self, phase: str, current_step: str = "") -> None:
         """Mark phase as running and persist. Start heartbeat so 'Last updated' refreshes during long phases."""
+        # Detect stale state from a previous dead process before starting
+        check_stale(self.story_path)
         if phase not in self._phases:
             self._phases[phase] = "pending"
         self._phases[phase] = "running"
@@ -226,6 +228,55 @@ class ProgressTracker:
             self._phases[p] = "done"
         self._write_phase_status("complete")
         self._write_progress()
+
+
+def check_stale(story_path: Path) -> bool:
+    """Check if the pipeline process for this story has died while phases are still 'running'.
+
+    Reads _progress.json, verifies the PID is alive via os.kill(pid, 0).
+    If the process is dead and any phase shows 'running', marks it as 'error'
+    with a descriptive message.
+
+    Returns True if a stale process was detected and marked as error.
+    """
+    path = Path(story_path) / PROGRESS_JSON_FILENAME
+    if not path.exists():
+        return False
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return False
+
+    pid = data.get("pid")
+    phases = data.get("phases", {})
+    if not pid or not isinstance(pid, int):
+        return False
+
+    # Check if any phase is still running
+    running_phases = [p for p, status in phases.items() if status == "running"]
+    if not running_phases:
+        return False
+
+    # Check if PID is alive
+    try:
+        os.kill(pid, 0)
+        return False  # Process is alive
+    except ProcessLookupError:
+        pass  # Process is dead
+    except PermissionError:
+        return False  # Process exists but we can't signal it
+
+    # Process is dead but phases show running — mark as error
+    for phase in running_phases:
+        phases[phase] = "error"
+    data["phases"] = phases
+    data["error"] = f"Process (PID {pid}) died unexpectedly while phases {running_phases} were running"
+    data["updated_ts"] = datetime.now(timezone.utc).isoformat()
+    try:
+        path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+    return True
 
 
 def write_progress_error(story_path: Path, error: str, traceback_str: str = "") -> None:
