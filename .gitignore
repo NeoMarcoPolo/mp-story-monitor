@@ -13,3 +13,6 @@ venv/
 .vscode/
 *.swp
 *.swo
+
+# Node
+node_modules/
